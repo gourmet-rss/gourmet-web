@@ -38,8 +38,8 @@ def handle_user_request(user_id: int):
         SELECT title, url, description, embedding <-> %s as distance 
         FROM documents 
         ORDER BY embedding <-> %s
-        LIMIT {DOC_LIMIT}
-    """, (user_embedding, user_embedding))
+        LIMIT %s
+    """, (user_embedding, user_embedding, DOC_LIMIT))
 
     results = pg_cursor.fetchall()
 
