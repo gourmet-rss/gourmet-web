@@ -14,28 +14,15 @@ class User:
     id: int
     embedding: torch.Tensor
 
-def encode_document_content(document: Document) -> str:
-    encoded = torch.zeros(1, 1024)
+def get_document_embedding(document: Document) -> str:
+    embedding = torch.zeros(1, 512)
 
-    # normalize
-    encoded = torch.nn.functional.normalize(encoded, p=2, dim=1)
+    embedding = torch.nn.functional.normalize(embedding, p=2, dim=1)
 
-    return encoded
+    return embedding
 
 def process_document(document: Document):
-    """
-    Receives a document from the source feed.
-
-    Args:
-        document (Document): The document to process.
-
-    Returns:
-        None
-    """
-
-    # Extract title, URL, and content from the document
-
-    embedding = encode_document_content(document)
+    embedding = get_document_embedding(document)
 
     pg_cursor.execute("INSERT INTO documents (title, url, description, embedding) VALUES (%s, %s, %s, %s)", (document.title, document.url, document.description, embedding))
 
