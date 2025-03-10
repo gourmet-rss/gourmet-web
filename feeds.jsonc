@@ -1,0 +1,37 @@
+{
+  "General_News": [
+    "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml", // The New York Times
+    "https://feeds.bbci.co.uk/news/rss.xml", // BBC News
+    "https://rss.cnn.com/rss/edition.rss", // CNN
+    "https://www.foxnews.com/rss.xml", // Fox News
+    "https://www.theguardian.com/uk/rss" // The Guardian (UK)
+  ],
+  "Technology": [
+    "https://techcrunch.com/feed/", // TechCrunch
+    "https://www.wired.com/feed/rss", // Wired
+    "https://www.theverge.com/rss/index.xml", // The Verge
+    "https://www.engadget.com/rss.xml", // Engadget
+    "https://www.mashable.com/rss" // Mashable
+  ],
+  "Business": [
+    "https://www.bloomberg.com/feeds/site.xml", // Bloomberg
+    "https://www.reuters.com/rss/businessNews", // Reuters Business
+    "https://www.cnbc.com/id/100727362/device/rss/rss.xml", // CNBC
+    "https://www.forbes.com/real-time/feed/", // Forbes
+    "https://www.wsj.com/xml/rss/3_7031.xml" // Wall Street Journal (front page)
+  ],
+  "Entertainment": [
+    "https://www.tmz.com/rss/", // TMZ
+    "https://ew.com/feed/", // Entertainment Weekly
+    "https://variety.com/rss/news/", // Variety
+    "https://www.hollywoodreporter.com/rssfeeds/", // The Hollywood Reporter
+    "https://deadline.com/feed/" // Deadline
+  ],
+  "International": [
+    "https://www.aljazeera.com/xml/rss/all.xml", // Al Jazeera
+    "https://www.bbc.co.uk/worldservice/rss.xml", // BBC World Service
+    "https://www.france24.com/en/rss/", // France 24
+    "https://www.dw.com/en/rssfeeds/rssfeeds/130", // Deutsche Welle
+    "https://rss.rt.com/public/section/main/rss.xml" // RT News
+  ]
+}

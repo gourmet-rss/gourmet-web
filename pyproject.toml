@@ -9,3 +9,11 @@ dependencies = [
     "psycopg[binary]>=3.2.5",
     "torch>=2.6.0",
 ]
+
+[tool.ruff]
+indent-width = 2
+line-length = 120
+select = ["E", "W", "F"]
+
+[tool.ruff.lint]
+extend-select = ["E", "W", "F"]
