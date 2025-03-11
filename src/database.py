@@ -29,7 +29,8 @@ users = sqlalchemy.Table(
 sources = sqlalchemy.Table(
   "sources",
   metadata,
-  sqlalchemy.Column("url", sqlalchemy.String, primary_key=True),
+  sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True),
+  sqlalchemy.Column("url", sqlalchemy.String, unique=True),
   sqlalchemy.Column("source_type", sqlalchemy.String),
 )
 
