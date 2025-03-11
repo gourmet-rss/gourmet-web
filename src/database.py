@@ -3,6 +3,11 @@ import sqlalchemy
 from sqlalchemy.dialects import postgresql
 import asyncio
 from pgvector.sqlalchemy import Vector
+import json
+import os
+from jsmin import jsmin
+
+dirname = os.path.dirname(__file__)
 
 
 async def get_db():
@@ -19,6 +24,13 @@ users = sqlalchemy.Table(
   metadata,
   sqlalchemy.Column("id", sqlalchemy.UUID, primary_key=True),
   sqlalchemy.Column("embedding", Vector(512)),
+)
+
+sources = sqlalchemy.Table(
+  "sources",
+  metadata,
+  sqlalchemy.Column("url", sqlalchemy.String, primary_key=True),
+  sqlalchemy.Column("source_type", sqlalchemy.String),
 )
 
 content = sqlalchemy.Table(
@@ -45,6 +57,23 @@ async def migrate():
     schema = sqlalchemy.schema.CreateTable(table, if_not_exists=False)
     query = str(schema.compile(dialect=dialect))
     await db.execute(query=query)
+
+  with open(os.path.join(dirname, "../feeds.jsonc"), "r") as f:
+    data = json.loads(jsmin(f.read()))
+
+  for category, urls in data.items():
+    if urls:
+      first_url = urls[0]
+      try:
+        # Use ON CONFLICT to avoid duplicates (since url is PRIMARY KEY)
+        insert_query = """
+                INSERT INTO sources (url, source_type)
+                VALUES (:url, :source_type)
+                ON CONFLICT (url) DO NOTHING;
+                """
+        await db.execute(query=insert_query, values={"url": first_url, "source_type": "rss"})
+      except Exception as e:
+        print(f"Error inserting {first_url}: {e}")
 
 
 if __name__ == "__main__":
