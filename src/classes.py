@@ -4,7 +4,7 @@ import torch
 
 
 @dataclass
-class Document:
+class ContentItem:
   title: str
   url: str
   description: str

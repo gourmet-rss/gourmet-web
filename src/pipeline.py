@@ -5,7 +5,7 @@ import asyncio
 from datetime import datetime
 
 
-def get_document_embedding(document: classes.Document) -> torch.Tensor:
+def get_content_embedding(content_item: classes.ContentItem) -> torch.Tensor:
   embedding = torch.zeros(512)
 
   embedding = torch.nn.functional.normalize(embedding, p=2, dim=-1)
@@ -13,25 +13,25 @@ def get_document_embedding(document: classes.Document) -> torch.Tensor:
   return embedding
 
 
-async def process_document(document: classes.Document):
-  embedding = get_document_embedding(document)
+async def process_content_item(content_item: classes.ContentItem):
+  embedding = get_content_embedding(content_item)
 
   db = await database.get_db()
   await db.execute(
-    database.documents.insert(),
+    database.content.insert(),
     {
-      "title": document.title,
-      "url": document.url,
-      "description": document.description,
-      "source_id": document.source_id,
+      "title": content_item.title,
+      "url": content_item.url,
+      "description": content_item.description,
+      "source_id": content_item.source_id,
       "embedding": embedding.tolist(),
     },
   )
 
 
 if __name__ == "__main__":
-  doc1 = classes.Document(
-    title="Document 1",
+  item1 = classes.ContentItem(
+    title="Content Item 1",
     url="https://example.com/doc1",
     description="Description 1",
     date=datetime.now(),
@@ -39,4 +39,4 @@ if __name__ == "__main__":
     embedding=None,
   )
 
-  asyncio.run(process_document(doc1))
+  asyncio.run(process_content_item(item1))

@@ -21,8 +21,8 @@ users = sqlalchemy.Table(
   sqlalchemy.Column("embedding", Vector(512)),
 )
 
-documents = sqlalchemy.Table(
-  "documents",
+content = sqlalchemy.Table(
+  "content",
   metadata,
   sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True),
   sqlalchemy.Column("title", sqlalchemy.String),
@@ -36,9 +36,12 @@ documents = sqlalchemy.Table(
 async def migrate():
   db = await get_db()
   for table in metadata.tables.values():
-    schema = sqlalchemy.schema.DropTable(table)
-    query = str(schema.compile(dialect=dialect))
-    await db.execute(query=query)
+    try:
+      schema = sqlalchemy.schema.DropTable(table)
+      query = str(schema.compile(dialect=dialect))
+      await db.execute(query=query)
+    except:
+      pass
     schema = sqlalchemy.schema.CreateTable(table, if_not_exists=False)
     query = str(schema.compile(dialect=dialect))
     await db.execute(query=query)
