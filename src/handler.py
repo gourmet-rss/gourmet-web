@@ -21,14 +21,12 @@ async def get_a_recommendation_id(user_embedding: list, recommendation_ids: list
     # Add recommendation id to avoid syntax error if list empty
     recommendation_ids = [0]
 
-  INTERVAL = "7 days"
-
   # Find the closest content to the new embedding
   results = await db.fetch_all(
     f"""
         SELECT id, date, embedding <-> :user_embedding AS distance
         FROM content
-        WHERE date >= CURRENT_DATE - INTERVAL '{INTERVAL}'
+        WHERE date >= CURRENT_DATE - INTERVAL '{constants.MAX_CONTENT_AGE} days'
         AND id <> ANY(:ignored_ids)
         ORDER BY embedding <-> :user_embedding
         LIMIT :limit
@@ -75,14 +73,24 @@ async def get_recommendations(user_id: int):
   return content
 
 
-async def handle_feedback(user_id: int, content_id: int, rating: int):
+async def handle_feedback(user_id: int, content_id: int, rating: float):
+  """
+  Adjust user embedding based on feedback
+
+  Args:
+      user_id (int): ID of the user providing feedback
+      content_id (int): ID of the content being rated
+      rating (float): Rating value indicating user's feedback between -1 and 1
+  """
+
   db = await database.get_db()
   user = await db.fetch_one(database.users.select().where(database.users.c.id == user_id))
   content = await db.fetch_one(database.content.select().where(database.content.c.id == content_id))
 
-  user_to_content_delta = user.embedding - content.embedding
-  adjust_delta = user_to_content_delta * rating * constants.USER_ADJUST_FACTOR
-  updated_embedding = user.embedding + adjust_delta
+  # Adjust the embedding based on the rating using exponential moving average (EMA)
+  updated_embedding = (
+    constants.USER_ADJUST_FACTOR * content.embedding * rating + (1 - constants.USER_ADJUST_FACTOR) * user.embedding
+  )
 
   await db.execute(database.users.update(database.users.c.id == user_id), {"embedding": updated_embedding.tolist()})
 
