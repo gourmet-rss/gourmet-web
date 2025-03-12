@@ -1,12 +1,13 @@
-from src import classes
-from src import database
 import torch
 import asyncio
-from sentence_transformers import SentenceTransformer
+import sentence_transformers
 import feedparser
 import datetime
 
-model = SentenceTransformer("paraphrase-MiniLM-L6-v2")
+from src import classes
+from src import database
+
+model = sentence_transformers.SentenceTransformer("paraphrase-MiniLM-L6-v2")
 
 
 def get_content_embedding(content_item: classes.ContentItem) -> torch.Tensor:
@@ -41,12 +42,13 @@ async def process_content_item(content_item: classes.ContentItem):
 
 
 async def feed_ingestion(feed_url: str):
-  feed = feedparser.parse(feed_url)
-
   # print("\nFEED KEYS:", feed.keys())
-
-  for entry in feed.entries:
-    await process_content_item(entry)
+  try:
+    feed = feedparser.parse(feed_url)
+    for entry in feed.entries:
+      await process_content_item(entry)
+  finally:
+    await database.close_db()
 
 
 if __name__ == "__main__":
