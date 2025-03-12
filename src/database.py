@@ -53,7 +53,7 @@ content = sqlalchemy.Table(
   metadata,
   sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True),
   sqlalchemy.Column("title", sqlalchemy.String),
-  sqlalchemy.Column("url", sqlalchemy.String),
+  sqlalchemy.Column("url", sqlalchemy.String, unique=True),
   sqlalchemy.Column("description", sqlalchemy.String),
   sqlalchemy.Column("source_id", sqlalchemy.Integer),
   sqlalchemy.Column("embedding", Vector(constants.EMBED_DIM)),
