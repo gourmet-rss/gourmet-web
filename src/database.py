@@ -6,6 +6,7 @@ from pgvector.sqlalchemy import Vector
 import json
 import os
 from jsmin import jsmin
+from src import constants
 
 dirname = os.path.dirname(__file__)
 
@@ -23,7 +24,7 @@ users = sqlalchemy.Table(
   "users",
   metadata,
   sqlalchemy.Column("id", sqlalchemy.UUID, primary_key=True),
-  sqlalchemy.Column("embedding", Vector(512)),
+  sqlalchemy.Column("embedding", Vector(constants.EMBED_DIM)),
 )
 
 sources = sqlalchemy.Table(
@@ -42,7 +43,8 @@ content = sqlalchemy.Table(
   sqlalchemy.Column("url", sqlalchemy.String),
   sqlalchemy.Column("description", sqlalchemy.String),
   sqlalchemy.Column("source_id", sqlalchemy.Integer),
-  sqlalchemy.Column("embedding", Vector(512)),
+  sqlalchemy.Column("embedding", Vector(constants.EMBED_DIM)),
+  sqlalchemy.Column("date", sqlalchemy.DateTime(timezone=True)),
 )
 
 
