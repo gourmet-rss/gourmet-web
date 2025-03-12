@@ -1,7 +1,7 @@
 import torch
 import uuid
 import numpy as np
-import datetime
+from datetime import datetime
 from src import database, util, constants
 
 
@@ -15,24 +15,25 @@ async def get_a_recommendation_id(user_embedding: list, recommendation_ids: list
   # Create a small adjustment to the user embedding and use it to find a new recommendation
   max_change_proportion = 0.0001
   random_delta = (2 * max_change_proportion * torch.rand(constants.EMBED_DIM)) - 1
-  new_embedding = user_embedding + random_delta
+  new_embedding = torch.tensor(user_embedding) + random_delta
+
+  if len(recommendation_ids) == 0:
+    # Add recommendation id to avoid syntax error if list empty
+    recommendation_ids = [0]
+
+  INTERVAL = "7 days"
 
   # Find the closest content to the new embedding
   results = await db.fetch_all(
-    """
-        SELECT id, embedding <-> :user_embedding as distance
+    f"""
+        SELECT id, date, embedding <-> :user_embedding AS distance
         FROM content
-        WHERE date >= CURRENT_DATE - INTERVAL :interval
-        AND id NOT IN :ignored_ids
+        WHERE date >= CURRENT_DATE - INTERVAL '{INTERVAL}'
+        AND id <> ANY(:ignored_ids)
         ORDER BY embedding <-> :user_embedding
         LIMIT :limit
     """,
-    {
-      "user_embedding": util.list_to_string(new_embedding),
-      "limit": 50,
-      "interval": "7 days",
-      "ignored_ids": recommendation_ids,
-    },
+    {"user_embedding": util.list_to_string(new_embedding.tolist()), "limit": 50, "ignored_ids": recommendation_ids},
   )
 
   current_date = datetime.now()
@@ -41,8 +42,9 @@ async def get_a_recommendation_id(user_embedding: list, recommendation_ids: list
   chosen_result_id = None
   min_distance = float("inf")
   for result in results:
-    age_in_days = (current_date - result.date).days
-    adjusted_distance = result.distance + (age_in_days * constants.AGE_PENALTY_FACTOR)
+    age_in_seconds = current_date.timestamp() - result.date.timestamp()
+    age_in_hours = age_in_seconds / 3600
+    adjusted_distance = result.distance + (age_in_hours * constants.AGE_PENALTY_FACTOR)
 
     if adjusted_distance < min_distance:
       min_distance = adjusted_distance
@@ -125,7 +127,21 @@ async def onboard(user_id: int, selected_content: list):
 
 
 async def main():
-  user_id = input("What is your user id? Leave blank to sign up.")
+  db = await database.get_db()
+  users = await db.fetch_all(database.users.select())
+
+  if len(users) > 0:
+    print("Sign in:")
+    for i, item in enumerate(users):
+      print(f"{i + 1}) {item['id']}")
+    selected_idx = input("Select the option number associated with your user ID, or leave blank to sign up: ")
+    if selected_idx:
+      user_id = users[int(selected_idx) - 1]["id"]
+    else:
+      user_id = None
+  else:
+    print("Signing up...")
+    user_id = None
 
   if not user_id:
     user_id, sample_content = await sign_up()
