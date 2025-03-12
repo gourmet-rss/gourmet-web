@@ -10,11 +10,24 @@ from src import constants
 
 dirname = os.path.dirname(__file__)
 
+# Create a single global pool that can be reused
+_pool = None
+
 
 async def get_db():
-  client = Database("postgresql://postgres:password@localhost:5432")
-  await client.connect()
-  return client
+  global _pool
+  if _pool is None:
+    _pool = Database("postgresql://postgres:password@localhost:5433")
+    await _pool.connect()
+  return _pool
+
+
+# Add a function to close the pool when done
+async def close_db():
+  global _pool
+  if _pool is not None:
+    await _pool.disconnect()
+    _pool = None
 
 
 metadata = sqlalchemy.MetaData()
