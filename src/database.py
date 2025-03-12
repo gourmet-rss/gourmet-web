@@ -12,7 +12,7 @@ dirname = os.path.dirname(__file__)
 
 
 async def get_db():
-  client = Database("postgresql://postgres:password@localhost:5432")
+  client = Database("postgresql://postgres:password@localhost:5433")
   await client.connect()
   return client
 
