@@ -10,6 +10,14 @@ The rss feeder that only give you the best content you want.
 
 ## Local dev
 
-Run `python -m src.pipeline` to insert a piece of sample content
+Start the database with `docker compose up -d`
 
-Run `python -m src.handler` to run the user request cycle as a CLI tool
+### With `uv`
+
+Run `uv sync` to install the dependencies
+
+Run `uv run -m src/database.py` to migrate the database
+
+Run `uv run -m src.pipeline` to insert a piece of sample content
+
+Run `uv run -m src.handler` to run the user request cycle as a CLI tool
