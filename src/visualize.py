@@ -47,19 +47,22 @@ async def visualize():
   explained_variance = sum(pca.explained_variance_ratio_)
   print(f"PCA with {n_components_pca} components explains {explained_variance:.2%} of variance")
 
-  distinct_colors = {
-    0: "#000080",  # Scottish - Navy Blue
-    1: "#1E90FF",  # English - Dodger Blue
-    2: "#FFA500",  # Indian - Orange
-    3: "#4169E1",  # Irish - Royal Blue
-    4: "#87CEEB",  # Welsh - Sky Blue
-    5: "#90EE90",  # NewZealandEnglish - Light Green
-    6: "#228B22",  # AustralianEnglish - Forest Green
-    7: "#32CD32",  # SouthAfrican - Lime Green
-    8: "#8B0000",  # Canadian - Dark Red
-    9: "#800080",  # NorthernIrish - Purple
-    10: "#FF0000",  # American - Bright Red
-  }
+  distinct_colors = [
+    "#87CEEB",  # Sky Blue
+    "#FF0000",  # Bright Red
+    "#228B22",  # Forest Green
+    "#FFA500",  # Orange
+    "#800080",  # Purple
+    "#8B0000",  # Dark Red
+    "#4169E1",  # Royal Blue
+    "#90EE90",  # Light Green
+    "#1E90FF",  # Dodger Blue
+    "#32CD32",  # Lime Green
+    "#000080",  # Navy Blue
+  ]
+
+  # Mapping for colors
+  color_index_to_color = {i: color for i, color in enumerate(distinct_colors)}
 
   source_ids = [x.source_id for x in all_content]
 
@@ -70,7 +73,7 @@ async def visualize():
 
   def get_color_for_source(source_id):
     i = source_ids.index(source_id)
-    return distinct_colors[i % len(distinct_colors)]
+    return color_index_to_color[i % len(color_index_to_color)]
 
   # Function to calculate point size based on content age
   now = datetime.now()
@@ -119,8 +122,8 @@ async def visualize():
     # Calculate point sizes based on content age
     point_sizes = [get_point_size(all_content[i].date.replace(tzinfo=None)) for i in source_indices]
 
-    # Calculate content ages in days for hover info
-    content_ages = [(now - all_content[i].date.replace(tzinfo=None)).days for i in source_indices]
+    # Calculate content ages in hours for hover info
+    content_ages = [(now - all_content[i].date.replace(tzinfo=None)).total_seconds() // 3600 for i in source_indices]
 
     # Add 3D scatter plot for this source
     fig.add_trace(
@@ -131,7 +134,7 @@ async def visualize():
         mode="markers",
         marker=dict(color=get_color_for_source(source_id), size=point_sizes, opacity=0.6, sizemode="diameter"),
         name=source_url,
-        hovertemplate="<b>%{text}</b><br>Age: %{customdata} days<extra></extra>",
+        hovertemplate="<b>%{text}</b><br>Age: %{customdata} hours<extra></extra>",
         text=[all_content[i].title for i in source_indices],
         customdata=content_ages,
       )
