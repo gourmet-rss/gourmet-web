@@ -2,20 +2,18 @@ from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 import plotly.graph_objects as go
 import asyncio
-from src import database
+from src import database, constants
 import numpy as np
 import torch
 from datetime import datetime, timedelta
-
-MAX_DAYS = 7.0  # Content older than 7 days is not included
-MIN_SIZE = 5.0  # Minimum point size for oldest content (nearly 7 days old)
-MAX_SIZE = 20.0  # Maximum point size for newest content
 
 
 async def visualize_user_embedding_history(user_embeddings: list):
   db = await database.get_db()
   all_content = await db.fetch_all(
-    database.content.select().where(database.content.c.date >= datetime.now() - timedelta(days=MAX_DAYS))
+    database.content.select().where(
+      database.content.c.date >= datetime.now() - timedelta(days=constants.MAX_CONTENT_AGE)
+    )
   )
 
   embeddings = torch.tensor(np.array([x.embedding for x in all_content]))
@@ -74,10 +72,12 @@ async def visualize_user_embedding_history(user_embeddings: list):
     # Calculate age in days
     age_days = (now - content_date).total_seconds() / (24 * 60 * 60)
     # Normalize age to [0, 1] where 0 is newest and 1 is oldest (7 days)
-    normalized_age = min(age_days / MAX_DAYS, 1.0)
+    normalized_age = min(age_days / constants.MAX_CONTENT_AGE, 1.0)
     # Invert so newer content has larger points
     normalized_size = 1.0 - normalized_age
     # Scale to point size range
+    MIN_SIZE = 5.0  # Minimum point size for oldest content (nearly 7 days old)
+    MAX_SIZE = 20.0  # Maximum point size for newest content
     point_size = MIN_SIZE + normalized_size * (MAX_SIZE - MIN_SIZE)
     return point_size
 
