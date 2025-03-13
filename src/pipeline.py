@@ -7,7 +7,7 @@ import asyncpg
 
 from src import database
 
-model = sentence_transformers.SentenceTransformer("paraphrase-MiniLM-L6-v2")
+model = sentence_transformers.SentenceTransformer("paraphrase-distilroberta-base-v1")
 
 
 def get_content_embedding(content_item) -> torch.Tensor:

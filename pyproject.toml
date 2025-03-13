@@ -8,8 +8,10 @@ dependencies = [
     "databases[asyncpg]>=0.9.0",
     "feedparser>=6.0.11",
     "jsmin>=3.0.1",
+    "matplotlib>=3.10.1",
     "numpy>=2.2.3",
     "pgvector>=0.3.6",
+    "plotly>=6.0.0",
     "sentence-transformers>=3.4.1",
     "torch>=2.6.0",
 ]
