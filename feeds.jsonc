@@ -14,7 +14,7 @@
     "https://www.mashable.com/rss" // Mashable
   ],
   "Business": [
-    "https://www.bloomberg.com/feeds/site.xml", // Bloomberg
+    "https://feeds.bloomberg.com/business/news.rss", // Bloomberg
     "https://www.reuters.com/rss/businessNews", // Reuters Business
     "https://www.cnbc.com/id/100727362/device/rss/rss.xml", // CNBC
     "https://www.forbes.com/real-time/feed/", // Forbes
@@ -40,5 +40,12 @@
     "https://www.skysports.com/rss/11095", // Sky Sports News
     "https://www.cbssports.com/rss/headlines/", // CBS Sports
     "https://www.si.com/rss/si_topstories.rss" // Sports Illustrated
+  ],
+  "Video_Games": [
+    "https://www.polygon.com/rss/index.xml", // Polygon
+    "https://kotaku.com/rss", // Kotaku
+    "https://www.gamespot.com/feeds/news/", // GameSpot
+    "https://www.ign.com/rss/articles/feed", // IGN
+    "https://www.eurogamer.net/?format=rss" // Eurogamer
   ]
 }

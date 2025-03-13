@@ -21,10 +21,12 @@ def get_content_embedding(content_item) -> torch.Tensor:
 async def process_content_item(source_id: int, content_item: feedparser.FeedParserDict):
   embedding = get_content_embedding(content_item)
   published_date = None
-  try:
+  if "published_parsed" in content_item:
     published_date = datetime.datetime(*content_item.published_parsed[:6])
-  except Exception as e:
+  elif "updated_parsed" in content_item:
     published_date = datetime.datetime(*content_item.updated_parsed[:6])
+  else:
+    print(f"WARNING: No date found for {content_item.link}")
 
   db = await database.get_db()
   try:

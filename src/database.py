@@ -68,7 +68,8 @@ async def migrate():
       schema = sqlalchemy.schema.DropTable(table)
       query = str(schema.compile(dialect=dialect))
       await db.execute(query=query)
-    except:
+    except sqlalchemy.exc.ProgrammingError:
+      print(f"WARNING: Table {table.name} already exists")
       pass
     schema = sqlalchemy.schema.CreateTable(table, if_not_exists=False)
     query = str(schema.compile(dialect=dialect))
