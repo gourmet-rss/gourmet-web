@@ -40,5 +40,12 @@
     "https://www.skysports.com/rss/11095", // Sky Sports News
     "https://www.cbssports.com/rss/headlines/", // CBS Sports
     "https://www.si.com/rss/si_topstories.rss" // Sports Illustrated
+  ],
+  "Video_Games": [
+    "https://www.polygon.com/rss/index.xml", // Polygon
+    "https://kotaku.com/rss", // Kotaku
+    "https://www.gamespot.com/feeds/news/", // GameSpot
+    "https://www.ign.com/rss/articles/feed", // IGN
+    "https://www.eurogamer.net/?format=rss" // Eurogamer
   ]
 }
