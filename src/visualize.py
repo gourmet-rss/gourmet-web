@@ -12,21 +12,13 @@ MIN_SIZE = 5.0  # Minimum point size for oldest content (nearly 7 days old)
 MAX_SIZE = 20.0  # Maximum point size for newest content
 
 
-async def visualize():
+async def visualize_user_embedding_history(user_embeddings: list):
   db = await database.get_db()
   all_content = await db.fetch_all(
     database.content.select().where(database.content.c.date >= datetime.now() - timedelta(days=MAX_DAYS))
   )
 
-  all_users = await db.fetch_all(database.users.select())
-
   embeddings = torch.tensor(np.array([x.embedding for x in all_content]))
-
-  # Extract user embeddings if they exist
-  user_embeddings = []
-  for user in all_users:
-    if hasattr(user, "embedding") and user.embedding is not None:
-      user_embeddings.append(user.embedding)
 
   # Combine content and user embeddings for t-SNE
   combined_embeddings = embeddings
@@ -140,14 +132,18 @@ async def visualize():
       )
     )
 
-  # Add user embeddings as yellow points
+  user_color = "#FF0000"
+
+  # Add user embeddings as points
   if user_tsne_result is not None and len(user_tsne_result) > 0:
     user_texts = []
-    for i, user in enumerate(all_users):
-      if hasattr(user, "embedding") and user.embedding is not None:
-        user_name = getattr(user, "id", f"User {i + 1}")
-        user_texts.append(user_name)
+    for i, user in enumerate(user_embeddings):
+      if i == 0:
+        user_texts.append("Current embedding")
+      else:
+        user_texts.append(f"{i} steps ago")
 
+    # Add user embedding points
     fig.add_trace(
       go.Scatter3d(
         x=user_tsne_result[:, 0],
@@ -155,7 +151,7 @@ async def visualize():
         z=user_tsne_result[:, 2],
         mode="markers",
         marker=dict(
-          color="#FFFF00",  # Yellow
+          color=user_color,
           size=8,  # Slightly larger to distinguish from content
           opacity=0.8,
           symbol="diamond",  # Different symbol for users
@@ -166,9 +162,27 @@ async def visualize():
       )
     )
 
+    # Add a path connecting user embeddings in sequence
+    if len(user_tsne_result) > 1:
+      fig.add_trace(
+        go.Scatter3d(
+          x=user_tsne_result[:, 0],
+          y=user_tsne_result[:, 1],
+          z=user_tsne_result[:, 2],
+          mode="lines",
+          line=dict(
+            color=user_color,
+            width=2,
+          ),
+          name="User Embedding Path",
+          showlegend=True,
+          hoverinfo="none",  # Don't show hover info for the path
+        )
+      )
+
   # Update layout
   fig.update_layout(
-    title="t-SNE visualization of accent embeddings (3D)",
+    title="t-SNE visualization of document/user embeddings (3D)",
     scene=dict(
       xaxis_title="X",
       yaxis_title="Y",
@@ -191,5 +205,13 @@ async def visualize():
   fig.show()
 
 
+async def main():
+  db = await database.get_db()
+
+  sample_user = await db.fetch_one(database.users.select())
+
+  await visualize_user_embedding_history([sample_user.embedding, sample_user.embedding + [0.1] * 768])
+
+
 if __name__ == "__main__":
-  asyncio.run(visualize())
+  asyncio.run(main())
