@@ -2,7 +2,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from typing import Dict, Any
-from src import service, database
+from fastapi.responses import HTMLResponse
+from src import service, database, visualize
 
 # Create FastAPI app instance
 app = FastAPI(title="Gourmet API", description="API for Gourmet content recommendation system")
@@ -47,6 +48,23 @@ async def health_check() -> Dict[str, str]:
   Health check endpoint to verify server is running.
   """
   return {"status": "healthy"}
+
+
+@app.get("/visualization", response_class=HTMLResponse)
+async def get_visualization() -> str:
+  """
+  Endpoint to render the visualization from visualize.py as HTML.
+  This can be embedded in an iframe on the frontend client.
+  Returns:
+      HTMLResponse: HTML content of the visualization
+  """
+  db = await database.get_db()
+  user = await db.fetch_one(database.users.select())
+  # Get user embedding history if available
+  user_embeddings = [user.embedding]
+  # Get HTML for visualization
+  html_content = await visualize.get_visualization_html(user_embeddings)
+  return html_content
 
 
 def start_server(host: str = "0.0.0.0", port: int = 8000, debug: bool = False):
