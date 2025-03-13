@@ -83,6 +83,9 @@ async def handle_feedback(user_id: int, content_id: int, rating: float):
       rating (float): Rating value indicating user's feedback between -1 and 1
   """
 
+  if rating > 1 or rating < -1:
+    raise Exception("Rating must be between -1 and 1")
+
   db = await database.get_db()
   user = await db.fetch_one(database.users.select().where(database.users.c.id == user_id))
   content = await db.fetch_one(database.content.select().where(database.content.c.id == content_id))
@@ -92,7 +95,8 @@ async def handle_feedback(user_id: int, content_id: int, rating: float):
     constants.USER_ADJUST_FACTOR * content.embedding * rating + (1 - constants.USER_ADJUST_FACTOR) * user.embedding
   )
 
-  await db.execute(database.users.update(database.users.c.id == user_id), {"embedding": updated_embedding.tolist()})
+  update_statement = database.users.update().where(database.users.c.id == user_id)
+  await db.execute(update_statement, {"embedding": updated_embedding.tolist()})
 
 
 async def sign_up():
@@ -120,18 +124,60 @@ async def sign_up():
 
   print(f"Signed up as {user_id}")
 
-  return user_id, sample_content
-
-
-async def onboard(user_id: int, selected_content: list):
-  content_embeddings = torch.tensor(np.array([x.embedding for x in selected_content]))
-  mean_embedding = torch.mean(content_embeddings, dim=0)
-
-  db = await database.get_db()
-
-  await db.execute(
-    database.users.update().where(database.users.c.id == user_id), {"embedding": mean_embedding.tolist()}
+  print(
+    """
+    We'll now show you some content you may be interested in.
+    Please vote 'yes' or 'no' for each so we can adjust our recommendations.
+    """
   )
+
+  votes = []
+
+  for i, item in enumerate(sample_content):
+    print(f"{i + 1}) {item['title']}")
+    vote = input("Vote (y/n): ").lower()
+    while vote not in ["y", "n"]:
+      vote = input("Please enter y or n: ").lower()
+    votes.append(vote)
+
+  liked_content = []
+  disliked_content = []
+
+  for i, vote in enumerate(votes):
+    if vote == "y":
+      liked_content.append(sample_content[i])
+    else:
+      disliked_content.append(sample_content[i])
+
+  await onboard(user_id, liked_content, disliked_content)
+
+  return user_id
+
+
+async def onboard(user_id: int, liked_content: list, disliked_content: list):
+  """
+  Onboard a user by creating, then adjusting their embedding based on their feedback
+
+  Args:
+      user_id (int): ID of the user providing feedback
+      liked_content (list): List of content objects that the user liked
+      disliked_content (list): List of content objects that the user disliked
+  """
+
+  # Create a user embedding based on the liked content
+  liked_embeddings = torch.tensor(np.array([x.embedding for x in liked_content]))
+  user_embedding = torch.mean(liked_embeddings, dim=0)
+
+  # Save the user embedding to the database
+  db = await database.get_db()
+  await db.execute(
+    database.users.update().where(database.users.c.id == user_id), {"embedding": user_embedding.tolist()}
+  )
+
+  # Adjust the user embedding based on the disliked content
+  disliked_ids = [x.id for x in disliked_content]
+  for disliked_id in disliked_ids:
+    await handle_feedback(user_id, disliked_id, -1)
 
 
 async def main():
@@ -152,23 +198,11 @@ async def main():
     user_id = None
 
   if not user_id:
-    user_id, sample_content = await sign_up()
+    user_id = await sign_up()
 
-    print("Here are some posts you may be interested in")
-    for i, item in enumerate(sample_content):
-      print(f"{i + 1}) {item['title']}")
+  recommendations = await get_recommendations(user_id)
 
-    res = input("Choose some posts by entering their numbers (separated by commas), then press enter:\n")
-
-    content_indices = [int(x) for x in res.split(",")]
-
-    selected_content = [sample_content[i - 1] for i in content_indices]
-
-    await onboard(user_id, selected_content)
-
-  recs = await get_recommendations(user_id)
-
-  print(f"Here are some recommended posts for you:\n{util.list_to_string([rec['title'] for rec in recs])}")
+  print(f"Here are some recommended posts for you:\n{util.list_to_string([rec['title'] for rec in recommendations])}")
 
 
 if __name__ == "__main__":
