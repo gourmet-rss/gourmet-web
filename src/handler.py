@@ -202,7 +202,26 @@ async def main():
 
   recommendations = await get_recommendations(user_id)
 
-  print(f"Here are some recommended posts for you:\n{util.list_to_string([rec['title'] for rec in recommendations])}")
+  while True:
+    print("\nHere are some more recommended posts for you:")
+    for i, rec in enumerate(recommendations):
+      print(f"{i + 1}) {rec['title']}")
+
+    selected_idx = input(
+      "\nSelect the option number associated with the post you'd like to vote on, or leave blank to exit: "
+    )
+    if selected_idx:
+      selected_idx = int(selected_idx) - 1
+      selected_rec = recommendations[selected_idx]
+      vote = input("Vote (y/n): ").lower()
+      while vote not in ["y", "n"]:
+        vote = input("Please enter y or n: ").lower()
+      if vote == "y":
+        await handle_feedback(user_id, selected_rec["id"], 1)
+      else:
+        await handle_feedback(user_id, selected_rec["id"], -1)
+    else:
+      break
 
 
 if __name__ == "__main__":
