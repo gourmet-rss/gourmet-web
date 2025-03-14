@@ -104,7 +104,13 @@ async def sign_up():
 
   db = await database.get_db()
 
-  await db.execute(database.users.insert(), {"id": user_id})
+  user = await db.execute(database.users.insert(), {"id": user_id})
+
+  return user
+
+
+async def get_onboarding_content(existing_selected_content_ids: list):
+  db = await database.get_db()
 
   # Get a random sample of content ids
   sample_content_ids = await db.fetch_all(f"""
@@ -122,47 +128,21 @@ async def sign_up():
   sample_content_ids = tuple([x.id for x in sample_content_ids])
   sample_content = await db.fetch_all(database.content.select().where(database.content.c.id.in_(sample_content_ids)))
 
-  print(f"Signed up as {user_id}")
-
-  print(
-    """
-    We'll now show you some content you may be interested in.
-    Please vote 'yes' or 'no' for each so we can adjust our recommendations.
-    """
-  )
-
-  votes = []
-
-  for i, item in enumerate(sample_content):
-    print(f"{i + 1}) {item['title']}")
-    vote = input("Vote (y/n): ").lower()
-    while vote not in ["y", "n"]:
-      vote = input("Please enter y or n: ").lower()
-    votes.append(vote)
-
-  liked_content = []
-  disliked_content = []
-
-  for i, vote in enumerate(votes):
-    if vote == "y":
-      liked_content.append(sample_content[i])
-    else:
-      disliked_content.append(sample_content[i])
-
-  await onboard(user_id, liked_content, disliked_content)
-
-  return user_id
+  return sample_content
 
 
-async def onboard(user_id: int, liked_content: list, disliked_content: list):
+async def onboard(user_id: int, liked_content_ids: list):
   """
   Onboard a user by creating, then adjusting their embedding based on their feedback
 
   Args:
       user_id (int): ID of the user providing feedback
-      liked_content (list): List of content objects that the user liked
-      disliked_content (list): List of content objects that the user disliked
+      liked_content_ids (list): List of content ids that the user liked
   """
+
+  db = await database.get_db()
+
+  liked_content = await db.fetch_all(database.content.select().where(database.content.c.id.in_(liked_content_ids)))
 
   # Create a user embedding based on the liked content
   liked_embeddings = torch.tensor(np.array([x.embedding for x in liked_content]))
@@ -173,11 +153,6 @@ async def onboard(user_id: int, liked_content: list, disliked_content: list):
   await db.execute(
     database.users.update().where(database.users.c.id == user_id), {"embedding": user_embedding.tolist()}
   )
-
-  # Adjust the user embedding based on the disliked content
-  disliked_ids = [x.id for x in disliked_content]
-  for disliked_id in disliked_ids:
-    await handle_feedback(user_id, disliked_id, -1)
 
 
 async def main():

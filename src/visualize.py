@@ -201,8 +201,31 @@ async def visualize_user_embedding_history(user_embeddings: list):
     hoverlabel=dict(bgcolor="white", font_size=16),
   )
 
-  # Show the plot
-  fig.show()
+  # Return figure for HTML rendering
+  return fig
+
+
+async def get_visualization_html(user_embeddings: list = None):
+  """
+  Generate HTML for the visualization of user embedding history.
+
+  Args:
+      user_embeddings: Optional list of user embeddings to visualize
+
+  Returns:
+      str: HTML string of the visualization
+  """
+  if user_embeddings is None:
+    # Use an empty list if no embeddings are provided
+    user_embeddings = []
+
+  # Get the figure from the visualization function
+  fig = await visualize_user_embedding_history(user_embeddings)
+
+  # Convert the figure to HTML
+  html = fig.to_html(full_html=True, include_plotlyjs=True)
+
+  return html
 
 
 async def main():
@@ -210,7 +233,10 @@ async def main():
 
   sample_user = await db.fetch_one(database.users.select())
 
-  await visualize_user_embedding_history([sample_user.embedding, sample_user.embedding + [0.1] * 768])
+  fig = await visualize_user_embedding_history([sample_user.embedding, sample_user.embedding + [0.1] * 768])
+
+  # Show the plot
+  fig.show()
 
 
 if __name__ == "__main__":
