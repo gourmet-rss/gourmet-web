@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from typing import Dict, Any
 from fastapi.responses import HTMLResponse
-from src import service, database, visualize
+from src import service, database, visualize, validators
 
 # Create FastAPI app instance
 app = FastAPI(title="Gourmet API", description="API for Gourmet content recommendation system")
@@ -21,16 +21,14 @@ app.add_middleware(
 @app.get("/signup")
 async def root() -> Dict[str, str]:
   res = service.sign_up()
-  return {"message": "Hello World from Gourmet API!"}
+  return {"status": "success"}
 
 
 @app.get("/onboarding")
-async def get_onboarding(existing_content: list[int] = []) -> Dict[str, list]:
-  sample_content = await service.get_onboarding_content(existing_content)
-  sample_content = [
-    {"id": x.id, "title": x.title, "description": x.description, "source_id": x.source_id} for x in sample_content
-  ]
-  return {"content": sample_content}
+async def get_onboarding(existing_content: str = "") -> Dict[str, list]:
+  existing_content_ids = [int(x) for x in existing_content.split(",")] if existing_content else []
+  sample_content = await service.get_onboarding_content(existing_content_ids)
+  return {"content": [validators.ContentItem(**x) for x in sample_content]}
 
 
 @app.post("/onboarding")
@@ -40,6 +38,14 @@ async def onboard(data: Dict[str, Any]) -> Dict[str, str]:
   user = await db.fetch_one(database.users.select())
   await service.onboard(user.id, selected_content)
   return {"status": "success"}
+
+
+@app.get("/feed")
+async def get_feed() -> Dict[str, list]:
+  db = await database.get_db()
+  user = await db.fetch_one(database.users.select())
+  content = await service.get_recommendations(user.id)
+  return {"content": [validators.ContentItem(**x) for x in content]}
 
 
 @app.get("/health")
