@@ -130,28 +130,6 @@ async def get_onboarding_content(existing_selected_content_ids: list):
 
   return sample_content
 
-  # votes = []
-
-  # for i, item in enumerate(sample_content):
-  #   print(f"{i + 1}) {item['title']}")
-  #   vote = input("Vote (y/n): ").lower()
-  #   while vote not in ["y", "n"]:
-  #     vote = input("Please enter y or n: ").lower()
-  #   votes.append(vote)
-
-  # liked_content = []
-  # disliked_content = []
-
-  # for i, vote in enumerate(votes):
-  #   if vote == "y":
-  #     liked_content.append(sample_content[i])
-  #   else:
-  #     disliked_content.append(sample_content[i])
-
-  # await onboard(user_id, liked_content, disliked_content)
-
-  # return user_id
-
 
 async def onboard(user_id: int, liked_content_ids: list):
   """
