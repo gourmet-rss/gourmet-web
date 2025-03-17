@@ -10,7 +10,7 @@ from src import database
 model = sentence_transformers.SentenceTransformer("paraphrase-distilroberta-base-v1")
 
 
-def get_content_embedding(content_item) -> torch.Tensor:
+def get_content_embedding(content_item: feedparser.FeedParserDict) -> torch.Tensor:
   text = content_item.title + ": " + content_item.summary
 
   embedding = model.encode(text, normalize_embeddings=True)

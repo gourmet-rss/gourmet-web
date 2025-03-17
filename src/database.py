@@ -61,18 +61,18 @@ content = sqlalchemy.Table(
 )
 
 
-async def migrate():
+async def migrate() -> None:
   db = await get_db()
   for table in metadata.tables.values():
     try:
-      schema = sqlalchemy.schema.DropTable(table)
-      query = str(schema.compile(dialect=dialect))
+      drop_schema = sqlalchemy.schema.DropTable(table)
+      query = str(drop_schema.compile(dialect=dialect))
       await db.execute(query=query)
     except sqlalchemy.exc.ProgrammingError:
       print(f"WARNING: Table {table.name} already exists")
       pass
-    schema = sqlalchemy.schema.CreateTable(table, if_not_exists=False)
-    query = str(schema.compile(dialect=dialect))
+    create_schema = sqlalchemy.schema.CreateTable(table, if_not_exists=False)
+    query = str(create_schema.compile(dialect=dialect))
     await db.execute(query=query)
 
   with open(os.path.join(dirname, "../feeds.jsonc"), "r") as f:
