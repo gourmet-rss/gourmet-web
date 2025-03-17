@@ -205,7 +205,7 @@ async def visualize_user_embedding_history(user_embeddings: list):
   return fig
 
 
-async def get_visualization_html(user_embeddings: list = None):
+async def get_visualization_html(user_embeddings: list[list[float]] = []) -> str:
   """
   Generate HTML for the visualization of user embedding history.
 
@@ -215,10 +215,6 @@ async def get_visualization_html(user_embeddings: list = None):
   Returns:
       str: HTML string of the visualization
   """
-  if user_embeddings is None:
-    # Use an empty list if no embeddings are provided
-    user_embeddings = []
-
   # Get the figure from the visualization function
   fig = await visualize_user_embedding_history(user_embeddings)
 

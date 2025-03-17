@@ -62,7 +62,7 @@ async def get_recommendations(user_id: int):
   db = await database.get_db()
   user = await db.fetch_one(database.users.select().where(database.users.c.id == user_id))
 
-  recommendation_ids = []
+  recommendation_ids: list[int] = []
 
   for idx in range(constants.NUM_RECOMMENDATIONS):
     recommendation_id = await get_a_recommendation_id(user.embedding, recommendation_ids)
