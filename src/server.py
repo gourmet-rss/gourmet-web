@@ -1,9 +1,10 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+import httpx
 import uvicorn
 from typing import Dict, Any
 from fastapi.responses import HTMLResponse
-from src import service, database, visualize, validators
+from src import service, database, visualize, validators, auth
 
 # Create FastAPI app instance
 app = FastAPI(title="Gourmet API", description="API for Gourmet content recommendation system")
@@ -18,32 +19,29 @@ app.add_middleware(
 )
 
 
-@app.get("/signup")
-async def root() -> Dict[str, str]:
-  res = service.sign_up()
-  return {"status": "success"}
-
-
 @app.get("/onboarding")
-async def get_onboarding(existing_content: str = "") -> Dict[str, list]:
+async def get_onboarding(request: Request, existing_content: str = "") -> Dict[str, list]:
+  await auth.authenticate(request)
   existing_content_ids = [int(x) for x in existing_content.split(",")] if existing_content else []
   sample_content = await service.get_onboarding_content(existing_content_ids)
   return {"content": [validators.ContentItem(**x) for x in sample_content]}
 
 
 @app.post("/onboarding")
-async def onboard(data: Dict[str, Any]) -> Dict[str, str]:
+async def onboard(request: Request, data: Dict[str, Any]) -> Dict[str, str]:
   selected_content = data.get("selected_content", [])
-  db = await database.get_db()
-  user = await db.fetch_one(database.users.select())
+  if len(selected_content) == 0:
+    raise HTTPException(status_code=400, detail="At least 3 content items must be selected")
+  user = await auth.authenticate(request)
   await service.onboard(user.id, selected_content)
   return {"status": "success"}
 
 
 @app.get("/feed")
-async def get_feed() -> Dict[str, list]:
-  db = await database.get_db()
-  user = await db.fetch_one(database.users.select())
+async def get_feed(request: Request) -> Dict[str, list]:
+  user = await auth.authenticate(request)
+  if user.embedding is None:
+    raise HTTPException(status_code=409, detail="User has not completed onboarding")
   content = await service.get_recommendations(user.id)
   return {"content": [validators.ContentItem(**x) for x in content]}
 
@@ -57,15 +55,8 @@ async def health_check() -> Dict[str, str]:
 
 
 @app.get("/visualization", response_class=HTMLResponse)
-async def get_visualization() -> str:
-  """
-  Endpoint to render the visualization from visualize.py as HTML.
-  This can be embedded in an iframe on the frontend client.
-  Returns:
-      HTMLResponse: HTML content of the visualization
-  """
-  db = await database.get_db()
-  user = await db.fetch_one(database.users.select())
+async def get_visualization(request: Request) -> str:
+  user = await auth.authenticate(request)
   # Get user embedding history if available
   user_embeddings = [user.embedding]
   # Get HTML for visualization

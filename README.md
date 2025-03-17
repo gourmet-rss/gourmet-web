@@ -12,6 +12,8 @@ The rss feeder that only give you the best content you want.
 
 Start the database with `docker compose up -d`
 
+Add a `.env` file to the root directory (see `.env.example` for required variables)
+
 ### With `uv`
 
 Run `uv sync` to install the dependencies

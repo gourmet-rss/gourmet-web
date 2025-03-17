@@ -36,7 +36,7 @@ dialect = postgresql.dialect()
 users = sqlalchemy.Table(
   "users",
   metadata,
-  sqlalchemy.Column("id", sqlalchemy.UUID, primary_key=True),
+  sqlalchemy.Column("id", sqlalchemy.String, primary_key=True),
   sqlalchemy.Column("embedding", Vector(constants.EMBED_DIM)),
 )
 
