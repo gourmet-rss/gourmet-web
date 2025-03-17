@@ -7,10 +7,7 @@ export default function Visualization() {
 
   return (
     <>
-      <button
-        onClick={() => setOpen(!open)}
-        className="cursor-pointer bg-slate-600 text-white font-medium px-4 py-2 rounded-md"
-      >
+      <button onClick={() => setOpen(!open)} className="btn">
         {open ? "Hide" : "Show"} embeddings visualisation
       </button>
       {open && (
