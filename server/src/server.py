@@ -1,10 +1,9 @@
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-import httpx
 import uvicorn
 from typing import Dict, Any
 from fastapi.responses import HTMLResponse
-from src import service, database, visualize, validators, auth
+from src import service, visualize, validators, auth
 import sys
 
 # Create FastAPI app instance
@@ -13,7 +12,7 @@ app = FastAPI(title="Gourmet API", description="API for Gourmet content recommen
 # Add CORS middleware
 app.add_middleware(
   CORSMiddleware,
-  allow_origins=["*"],  # In production, replace with specific origins
+  allow_origins=["*"],  # TODO: In production, replace with specific origins
   allow_credentials=True,
   allow_methods=["*"],
   allow_headers=["*"],
@@ -44,7 +43,7 @@ async def get_feed(request: Request) -> Dict[str, list]:
   if user.embedding is None:
     raise HTTPException(status_code=409, detail="User has not completed onboarding")
   content = await service.get_recommendations(user.id)
-  return {"content": [validators.ContentItem(**x) for x in content]}
+  return {"content": [validators.UserContentItem(**x) for x in content]}
 
 
 @app.get("/health")
@@ -63,6 +62,13 @@ async def get_visualization(request: Request) -> str:
   # Get HTML for visualization
   html_content = await visualize.get_visualization_html(user_embeddings)
   return html_content
+
+
+@app.post("/feedback")
+async def feedback(request: Request, data: validators.Feedback) -> Dict[str, str]:
+  user = await auth.authenticate(request)
+  await service.handle_feedback(user.id, data.content_id, data.rating)
+  return {"status": "success"}
 
 
 def start_server(host: str = "0.0.0.0", port: int = 8000, debug: bool = False):

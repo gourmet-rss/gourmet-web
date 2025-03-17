@@ -29,6 +29,50 @@ async def process_content_item(source_id: int, content_item: feedparser.FeedPars
     print(f"WARNING: No date found for {content_item.link}")
     published_date = datetime.datetime.now()
 
+  # Extract image URL if available
+  image_url = None
+  image_text = None
+  if "media_content" in content_item and content_item.media_content:
+    for media in content_item.media_content:
+      if "url" in media:
+        image_url = media["url"]
+        image_text = media.get("description", None)
+        break
+  elif "links" in content_item:
+    for link in content_item.links:
+      if link.get("type", "").startswith("image/"):
+        image_url = link.get("href")
+        image_text = link.get("title", None)
+        break
+
+  # Determine content type based on available information
+  content_type = "article"  # Default type
+
+  # Check for podcast/audio content
+  if "enclosures" in content_item:
+    for enclosure in content_item.enclosures:
+      if enclosure.get("type", "").startswith("audio/"):
+        content_type = "podcast"
+        break
+
+  # Check for video content
+  if content_type == "article" and "media_content" in content_item:
+    for media in content_item.media_content:
+      if media.get("type", "").startswith("video/"):
+        content_type = "video"
+        break
+
+  # Additional check in links for video/audio
+  if content_type == "article" and "links" in content_item:
+    for link in content_item.links:
+      link_type = link.get("type", "")
+      if link_type.startswith("video/"):
+        content_type = "video"
+        break
+      elif link_type.startswith("audio/"):
+        content_type = "podcast"
+        break
+
   db = await database.get_db()
   try:
     await db.execute(
@@ -40,6 +84,9 @@ async def process_content_item(source_id: int, content_item: feedparser.FeedPars
         "source_id": source_id,
         "date": published_date,
         "embedding": embedding.tolist(),
+        "image_url": image_url,
+        "image_text": image_text,
+        "content_type": content_type,
       },
     )
     await db.execute(

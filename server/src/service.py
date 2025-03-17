@@ -68,7 +68,20 @@ async def get_recommendations(user_id: int):
     recommendation_id = await get_a_recommendation_id(user.embedding, recommendation_ids)
     recommendation_ids.append(recommendation_id)
 
-  content = await db.fetch_all(database.content.select().where(database.content.c.id.in_(recommendation_ids)))
+  # Join content with user_content_ratings to get user ratings
+  content = await db.fetch_all(
+    """
+    SELECT
+      c.id, c.title, c.url, c.description, c.source_id, c.date, c.image_url,
+      s.url as source_url,
+      COALESCE(ucr.rating, 0) as rating
+    FROM content c
+    LEFT JOIN user_content_ratings ucr ON c.id = ucr.content_id AND ucr.user_id = :user_id
+    LEFT JOIN sources s ON c.source_id = s.id
+    WHERE c.id IN (SELECT UNNEST(cast(:content_ids as int[])))
+    """,
+    {"user_id": user_id, "content_ids": recommendation_ids},
+  )
 
   return content
 
