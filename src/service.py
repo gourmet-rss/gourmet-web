@@ -27,7 +27,7 @@ async def get_a_recommendation_id(user_embedding: list, recommendation_ids: list
         SELECT id, date, embedding <-> :user_embedding AS distance
         FROM content
         WHERE date >= CURRENT_DATE - INTERVAL '{constants.MAX_CONTENT_AGE} days'
-        AND id <> ANY(:ignored_ids)
+        AND id NOT IN (SELECT UNNEST(cast(:ignored_ids as int[])))
         ORDER BY embedding <-> :user_embedding
         LIMIT :limit
     """,
@@ -112,23 +112,33 @@ async def sign_up():
 async def get_onboarding_content(existing_selected_content_ids: list):
   db = await database.get_db()
 
+  sample_count = constants.SAMPLE_COUNT - len(existing_selected_content_ids)
+
   # Get a random sample of content ids
-  sample_content_ids = await db.fetch_all(f"""
-        SELECT MIN(id) AS id
+  sample_content_ids = await db.fetch_all(
+    """
+        SELECT id AS id
         FROM content
         WHERE embedding IS NOT NULL
-        GROUP BY source_id
+        AND id NOT IN (SELECT UNNEST(cast(:existing_ids as int[])))
         ORDER BY RANDOM()
-        LIMIT {constants.SAMPLE_COUNT}
-    """)
+        LIMIT :sample_count
+    """,
+    {"existing_ids": existing_selected_content_ids, "sample_count": sample_count},
+  )
 
   if len(sample_content_ids) == 0:
     raise Exception("No content found")
 
-  sample_content_ids = tuple([x.id for x in sample_content_ids])
-  sample_content = await db.fetch_all(database.content.select().where(database.content.c.id.in_(sample_content_ids)))
+  existing_content = await db.fetch_all(
+    database.content.select().where(database.content.c.id.in_(existing_selected_content_ids))
+  )
 
-  return sample_content
+  sample_content = await db.fetch_all(
+    database.content.select().where(database.content.c.id.in_([x.id for x in sample_content_ids]))
+  )
+
+  return existing_content + sample_content
 
 
 async def onboard(user_id: int, liked_content_ids: list):

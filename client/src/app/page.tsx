@@ -3,13 +3,12 @@ import Link from "next/link";
 import { z } from "zod";
 
 export default async function Home() {
-  const data = await fetch("http://127.0.0.1:8000/onboarding").then(
-    async (res) =>
-      z
-        .object({
-          content: z.array(contentItemValidator),
-        })
-        .parse(await res.json()),
+  const data = await fetch("http://127.0.0.1:8000/feed").then(async (res) =>
+    z
+      .object({
+        content: z.array(contentItemValidator),
+      })
+      .parse(await res.json()),
   );
 
   return (
