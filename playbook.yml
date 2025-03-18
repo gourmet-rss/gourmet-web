@@ -66,6 +66,11 @@
         username: "{{ lookup('env', 'DOCKER_HUB_USERNAME') }}"
         password: "{{ lookup('env', 'DOCKER_HUB_PASSWORD') }}"
 
+    - name: Pull latest images
+      shell: |
+        cd /home/cnimmo/gourmet
+        docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
+
     - name: Restart Docker Compose
       shell: |
         set -e

@@ -8,29 +8,44 @@ The rss feeder that only give you the best content you want.
 - [ ]
 - [ ]
 
-## Local dev
+## Local development
 
-Start the database with `docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d`
+### Initial setup
 
-Add a `.env` file to the root directory (see `.env.example` for required variables)
+1. Start the database with `docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d`
 
-### With `uv`
+2. Add a `.env` file to the root directory (see `.env.example` for required variables)
 
-cd into the `/server` directory and run `uv venv` to create a virtual environment
+3. cd into the `/server` directory
 
-Run `uv sync` to install the dependencies
+4. Run `uv sync` to install the dependencies (make sure you have [uv](https://github.com/astral-sh/uv) installed)
 
-Run `uv run -m src/database.py` to migrate the database
+5. Run `uv run -m alembic upgrade head` to apply database migrations
 
-Run `uv run -m src.pipeline` to insert a piece of sample content
+6. Run `uv run -m src.database` to seed the database with sample feeds
 
-Run `uv run -m src.handler` to run the user request cycle as a CLI tool
+7. Run `uv run -m src.pipeline` to run the ingestion pipeline to ingest some content from the sample feeds
+
+### Running the server
+
+cd into the `/server` directory and run `uv run -m src.server` to launch the server
 
 ### Frontend client
 
 cd into the `/client` directory and run `npm run dev` (make sure to run `npm install` first if you haven't already.)
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+
+### Making changes to the schema
+
+Follow these steps when making changes to the database schema:
+
+1. Make changes to the database schema in `server/src/database.py`
+2. Run `DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:5433 uv run -m alembic revision --autogenerate -m "description"` to generate a new migration based on your changes, replacing `description` with a description of the changes.
+3. Run `DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:5433 uv run -m alembic upgrade head` to apply the migration.
+4. If you need to revert the migration, run `DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:5433 uv run -m alembic downgrade -1`. Then delete the migration file manually.
+
+## Deployment
 
 ### Building for production
 
