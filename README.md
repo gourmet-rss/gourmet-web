@@ -36,15 +36,15 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 #### Server
 
-Run `docker build -t cameronnimmo/gourmet-server ./server` to build the docker image
+Run `docker buildx build --platform linux/amd64 -t cameronnimmo/gourmet-server ./server` to build the docker image
 
-Run `docker push cameronnimmo/gourmet-server` to push the image to the registry
+Run `docker push cameronnimmo/gourmet-server` to push the image to the registry (or run the build command with `--push`)
 
 #### Client
 
-Run `docker build -t cameronnimmo/gourmet-client ./client --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$(grep NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY .env | cut -d '=' -f2)` to build the docker image (pulling the clerk publishable key from the .env file in the root directory)
+Run `docker buildx build --platform linux/amd64 -t cameronnimmo/gourmet-client ./client --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$(grep NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY .env | cut -d '=' -f2)` to build the docker image (pulling the clerk publishable key from the .env file in the root directory)
 
-Run `docker push cameronnimmo/gourmet-client` to push the image to the registry
+Run `docker push cameronnimmo/gourmet-client` to push the image to the registry (or run the build command with `--push`)
 
 ### Running in production
 
@@ -57,5 +57,28 @@ This will launch postgres, the server, and the client
 To test the production setup in your local environment, with the CLERK_SECRET_KEY variable injected from the .env file, and the postgres database exposed on port 5433, run:
 
 ```
-CLERK_SECRET_KEY=$(grep CLERK_SECRET_KEY .env | cut -d '=' -f2) docker compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.dev.yml up -d
+export $(grep -v '^#' .env | xargs) && docker compose -f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.dev.yml up -d
+```
+
+### Deploying with Ansible
+
+First make sure you have built the latest images for the server and client, and pushed them to the registry (see above).
+
+Create an `inventory.ini` file with the following content:
+
+```
+[production]
+<your-production-server-ip>
+```
+
+Ensure your .env file includes the following variables:
+
+- `DOCKER_HUB_USERNAME`
+- `DOCKER_HUB_PASSWORD`
+- `CLERK_SECRET_KEY`
+
+Run the playbook:
+
+```
+export $(grep -v '^#' .env | xargs) && ansible-playbook -i inventory.ini playbook.yml
 ```
