@@ -1,6 +1,6 @@
 import { ZodType } from "zod";
 
-const SERVER_URL = "http://127.0.0.1:8000";
+const SERVER_URL = process.env.SERVER_URL || "http://127.0.0.1:8000";
 
 export class HTTPError extends Error {
   public readonly status: number;

@@ -1,0 +1,19 @@
+services:
+  server:
+    image: cameronnimmo/gourmet-server
+    ports:
+      - "8000:8000"
+    environment:
+      - CLERK_SECRET_KEY
+      - DATABASE_URL=postgresql://postgres:password@postgres:5432
+    depends_on:
+      - postgres
+  client:
+    image: cameronnimmo/gourmet-client
+    ports:
+      - "3000:3000"
+    environment:
+      - CLERK_SECRET_KEY
+      - SERVER_URL=http://server:8000
+    depends_on:
+      - server

@@ -5,6 +5,7 @@ import uvicorn
 from typing import Dict, Any
 from fastapi.responses import HTMLResponse
 from src import service, database, visualize, validators, auth
+import sys
 
 # Create FastAPI app instance
 app = FastAPI(title="Gourmet API", description="API for Gourmet content recommendation system")
@@ -78,4 +79,8 @@ def start_server(host: str = "0.0.0.0", port: int = 8000, debug: bool = False):
 
 if __name__ == "__main__":
   # Start the server when this file is run directly
-  start_server(debug=True)
+  args = sys.argv[1:]
+  if [x for x in args if x == "--prod"]:
+    start_server(debug=False)
+  else:
+    start_server(debug=True)
