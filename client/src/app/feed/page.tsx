@@ -24,17 +24,26 @@ export default async function Feed() {
     return (
       <ul className="flex flex-col gap-4">
         {data.content.map((contentItem) => (
-          <li key={contentItem.id} className="card card-border">
+          <li key={contentItem.id} className="card card-border bg-slate-500/5">
             <article className="card-body">
               <h3 className="card-title">{contentItem.title}</h3>
-              {contentItem.image_url ? (
-                <Image
-                  src={contentItem.image_url}
-                  alt={contentItem.image_text ?? ""}
-                  width={100}
-                  height={100}
-                  className="w-full h-48 object-cover"
-                />
+              {contentItem.media?.length ? (
+                (contentItem.media[0].medium === "image" ||
+                  contentItem.media[0].type?.startsWith("image/")) && (
+                  <div className="w-full h-48">
+                    <Image
+                      src={contentItem.media[0].url}
+                      alt={
+                        contentItem.media[0].medium ??
+                        contentItem.media[0].type ??
+                        ""
+                      }
+                      width={contentItem.media[0].width ?? 100}
+                      height={contentItem.media[0].height ?? 100}
+                      className="h-full w-auto object-cover mx-auto"
+                    />
+                  </div>
+                )
               ) : (
                 <div className="w-full h-4" />
               )}

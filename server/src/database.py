@@ -55,15 +55,14 @@ content = sqlalchemy.Table(
   "content",
   metadata,
   sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True),
+  sqlalchemy.Column("content_type", sqlalchemy.String),
   sqlalchemy.Column("title", sqlalchemy.String),
   sqlalchemy.Column("url", sqlalchemy.String, unique=True),
   sqlalchemy.Column("description", sqlalchemy.String),
   sqlalchemy.Column("source_id", sqlalchemy.Integer),
-  sqlalchemy.Column("embedding", Vector(constants.EMBED_DIM)),
   sqlalchemy.Column("date", sqlalchemy.DateTime(timezone=True)),
-  sqlalchemy.Column("image_url", sqlalchemy.String, nullable=True),
-  sqlalchemy.Column("image_text", sqlalchemy.String, nullable=True),
-  sqlalchemy.Column("content_type", sqlalchemy.String, nullable=True),
+  sqlalchemy.Column("embedding", Vector(constants.EMBED_DIM)),
+  sqlalchemy.Column("media", sqlalchemy.JSON, nullable=True),
 )
 
 user_content_ratings = sqlalchemy.Table(

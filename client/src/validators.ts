@@ -6,10 +6,19 @@ export const contentItemValidator = z.object({
   title: z.string(),
   description: z.string(),
   url: z.string(),
-  image_url: z.string().nullable(),
-  image_text: z.string().nullable(),
-  content_type: z.string().nullable(),
+  media: z
+    .array(
+      z.object({
+        url: z.string(),
+        medium: z.string().nullable(),
+        type: z.string().nullable(),
+        height: z.number().nullable(),
+        width: z.number().nullable(),
+      }),
+    )
+    .nullable(),
   source_id: z.number(),
+  content_type: z.string(),
 });
 
 export const userContentItemValidator = contentItemValidator.extend({

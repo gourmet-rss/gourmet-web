@@ -29,22 +29,6 @@ async def process_content_item(source_id: int, content_item: feedparser.FeedPars
     print(f"WARNING: No date found for {content_item.link}")
     published_date = datetime.datetime.now()
 
-  # Extract image URL if available
-  image_url = None
-  image_text = None
-  if "media_content" in content_item and content_item.media_content:
-    for media in content_item.media_content:
-      if "url" in media:
-        image_url = media["url"]
-        image_text = media.get("description", None)
-        break
-  elif "links" in content_item:
-    for link in content_item.links:
-      if link.get("type", "").startswith("image/"):
-        image_url = link.get("href")
-        image_text = link.get("title", None)
-        break
-
   # Determine content type based on available information
   content_type = "article"  # Default type
 
@@ -84,8 +68,7 @@ async def process_content_item(source_id: int, content_item: feedparser.FeedPars
         "source_id": source_id,
         "date": published_date,
         "embedding": embedding.tolist(),
-        "image_url": image_url,
-        "image_text": image_text,
+        "media": content_item.get("media_content", []),
         "content_type": content_type,
       },
     )

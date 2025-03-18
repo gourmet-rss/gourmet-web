@@ -72,7 +72,7 @@ async def get_recommendations(user_id: int):
   content = await db.fetch_all(
     """
     SELECT
-      c.id, c.title, c.url, c.description, c.source_id, c.date, c.image_url,
+      c.id, c.content_type, c.title, c.url, c.description, c.source_id, c.date, c.media,
       s.url as source_url,
       COALESCE(ucr.rating, 0) as rating
     FROM content c

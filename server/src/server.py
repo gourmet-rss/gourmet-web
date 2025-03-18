@@ -5,6 +5,7 @@ from typing import Dict, Any
 from fastapi.responses import HTMLResponse
 from src import service, visualize, validators, auth
 import sys
+import json
 
 # Create FastAPI app instance
 app = FastAPI(title="Gourmet API", description="API for Gourmet content recommendation system")
@@ -43,7 +44,21 @@ async def get_feed(request: Request) -> Dict[str, list]:
   if user.embedding is None:
     raise HTTPException(status_code=409, detail="User has not completed onboarding")
   content = await service.get_recommendations(user.id)
-  return {"content": [validators.UserContentItem(**x) for x in content]}
+
+  # Parse content items and ensure media is properly formatted
+  validated_content = []
+  for content_item in content:
+    content_item_dict = dict(content_item)
+
+    if "media" in content_item_dict:
+      try:
+        content_item_dict["media"] = json.loads(content_item_dict["media"])
+      except json.JSONDecodeError:
+        content_item_dict["media"] = []
+
+    validated_content.append(validators.UserContentItem(**content_item_dict))
+
+  return {"content": validated_content}
 
 
 @app.get("/health")
