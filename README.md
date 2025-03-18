@@ -63,7 +63,7 @@ Run `docker push cameronnimmo/gourmet-client` to push the image to the registry 
 
 ### Running in production
 
-Run `CLERK_SECRET_KEY=your-secret-key docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d`
+Run `CLERK_SECRET_KEY=your-secret-key POSTGRES_PASSWORD=your-password docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d`
 
 This will launch postgres, the server, and the client
 
@@ -91,9 +91,42 @@ Ensure your .env file includes the following variables:
 - `DOCKER_HUB_USERNAME`
 - `DOCKER_HUB_PASSWORD`
 - `CLERK_SECRET_KEY`
+- `POSTGRES_PASSWORD`
 
 Run the playbook:
 
 ```
 export $(grep -v '^#' .env | xargs) && ansible-playbook -i inventory.ini playbook.yml
 ```
+
+### CI/CD with GitHub Actions
+
+This project uses GitHub Actions for continuous integration and deployment in a single workflow:
+
+#### Development Workflow (develop branch)
+
+When code is pushed to the `develop` branch, GitHub Actions will:
+
+1. Build the Docker images for both the server and client
+2. Push these images to Docker Hub with both the `latest` tag and a tag matching the commit SHA
+
+#### Production Deployment (main branch)
+
+When code is pushed to the `main` branch, GitHub Actions will:
+
+1. Build and push Docker images (same as develop branch)
+2. Deploy the application using the Ansible playbook
+
+This workflow is defined in `.github/workflows/ci-cd.yml`.
+
+#### Required Secrets
+
+The following secrets must be configured in your GitHub repository:
+
+- `DOCKER_HUB_USERNAME`: Your Docker Hub username
+- `DOCKER_HUB_PASSWORD`: Your Docker Hub password
+- `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`: Your Clerk publishable key
+- `CLERK_SECRET_KEY`: Your Clerk secret key
+- `SSH_PRIVATE_KEY`: SSH private key for accessing your server
+- `SERVER_HOST`: Hostname or IP address of your production server
+- `POSTGRES_PASSWORD`: Your PostgreSQL password

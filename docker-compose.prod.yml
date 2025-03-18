@@ -1,11 +1,14 @@
 services:
+  postgres:
+    environment:
+      POSTGRES_PASSWORD: $POSTGRES_PASSWORD
   server:
     image: cameronnimmo/gourmet-server
     ports:
       - "8000:8000"
     environment:
       - CLERK_SECRET_KEY
-      - DATABASE_URL=postgresql+asyncpg://postgres:password@postgres:5432
+      - DATABASE_URL=postgresql+asyncpg://postgres:$POSTGRES_PASSWORD@postgres:5432
     depends_on:
       - postgres
   client:
