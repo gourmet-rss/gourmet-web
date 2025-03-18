@@ -1,7 +1,6 @@
 from datetime import datetime
-from pydantic import BaseModel, field_validator
-from typing import Optional, Union, List
-import json
+from pydantic import BaseModel
+from typing import Optional, List
 
 
 class Media(BaseModel):
@@ -21,16 +20,6 @@ class ContentItem(BaseModel):
   date: datetime
   source_id: int
   content_type: str
-
-  @field_validator("media")
-  @classmethod
-  def parse_media_json(cls, v):
-    if isinstance(v, str):
-      try:
-        return json.loads(v)
-      except json.JSONDecodeError:
-        return []
-    return v
 
 
 class UserContentItem(ContentItem):
