@@ -3,7 +3,7 @@ services:
     environment:
       POSTGRES_PASSWORD: $POSTGRES_PASSWORD
   server:
-    image: cameronnimmo/gourmet-server
+    image: ghcr.io/azizi-a/gourmet-server
     ports:
       - "8000:8000"
     environment:
@@ -12,7 +12,7 @@ services:
     depends_on:
       - postgres
   client:
-    image: cameronnimmo/gourmet-client
+    image: ghcr.io/azizi-a/gourmet-client
     ports:
       - "80:3000"
     environment:

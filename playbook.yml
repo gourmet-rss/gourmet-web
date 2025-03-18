@@ -61,10 +61,11 @@
           - "--exclude=.env"
           - "--exclude=inventory.ini"
 
-    - name: Authenticate with Docker Hub
+    - name: Authenticate with GitHub Container Registry
       docker_login:
-        username: "{{ lookup('env', 'DOCKER_HUB_USERNAME') }}"
-        password: "{{ lookup('env', 'DOCKER_HUB_PASSWORD') }}"
+        registry: ghcr.io
+        username: "azizi-a"
+        password: "{{ lookup('env', 'GITHUB_TOKEN') }}"
 
     - name: Pull latest images
       shell: |

@@ -51,15 +51,15 @@ Follow these steps when making changes to the database schema:
 
 #### Server
 
-Run `docker buildx build --platform linux/amd64 -t cameronnimmo/gourmet-server ./server` to build the docker image
+Run `docker buildx build --platform linux/amd64 -t ghcr.io/azizi-a/gourmet-server ./server` to build the docker image
 
-Run `docker push cameronnimmo/gourmet-server` to push the image to the registry (or run the build command with `--push`)
+Run `docker push ghcr.io/azizi-a/gourmet-server` to push the image to the registry (or run the build command with `--push`)
 
 #### Client
 
-Run `docker buildx build --platform linux/amd64 -t cameronnimmo/gourmet-client ./client --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$(grep NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY .env | cut -d '=' -f2)` to build the docker image (pulling the clerk publishable key from the .env file in the root directory)
+Run `docker buildx build --platform linux/amd64 -t ghcr.io/azizi-a/gourmet-client ./client --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$(grep NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY .env | cut -d '=' -f2)` to build the docker image (pulling the clerk publishable key from the .env file in the root directory)
 
-Run `docker push cameronnimmo/gourmet-client` to push the image to the registry (or run the build command with `--push`)
+Run `docker push ghcr.io/azizi-a/gourmet-client` to push the image to the registry (or run the build command with `--push`)
 
 ### Running in production
 
@@ -88,8 +88,7 @@ Create an `inventory.ini` file with the following content:
 
 Ensure your .env file includes the following variables:
 
-- `DOCKER_HUB_USERNAME`
-- `DOCKER_HUB_PASSWORD`
+- `GITHUB_TOKEN`
 - `CLERK_SECRET_KEY`
 - `POSTGRES_PASSWORD`
 
@@ -123,8 +122,7 @@ This workflow is defined in `.github/workflows/ci-cd.yml`.
 
 The following secrets must be configured in your GitHub repository:
 
-- `DOCKER_HUB_USERNAME`: Your Docker Hub username
-- `DOCKER_HUB_PASSWORD`: Your Docker Hub password
+- `GITHUB_TOKEN`: Automatically provided by GitHub Actions
 - `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`: Your Clerk publishable key
 - `CLERK_SECRET_KEY`: Your Clerk secret key
 - `SSH_PRIVATE_KEY`: SSH private key for accessing your server
