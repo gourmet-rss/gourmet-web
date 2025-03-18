@@ -7,17 +7,20 @@ import json
 import os
 from jsmin import jsmin
 from src import constants
+import asyncpg
 
 dirname = os.path.dirname(__file__)
 
 # Create a single global pool that can be reused
 _pool = None
 
+DATABASE_URL = os.getenv("DATABASE_URL")
+
 
 async def get_db():
   global _pool
   if _pool is None:
-    _pool = Database("postgresql://postgres:password@localhost:5433")
+    _pool = Database(DATABASE_URL or "postgresql://postgres:password@localhost:5433")
     await _pool.connect()
   return _pool
 
@@ -60,6 +63,18 @@ content = sqlalchemy.Table(
   sqlalchemy.Column("date", sqlalchemy.DateTime(timezone=True)),
 )
 
+ingestion_jobs = sqlalchemy.Table(
+  "ingestion_jobs",
+  metadata,
+  sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True),
+  sqlalchemy.Column("start_time", sqlalchemy.DateTime(timezone=True)),
+  sqlalchemy.Column("end_time", sqlalchemy.DateTime(timezone=True)),
+  sqlalchemy.Column("status", sqlalchemy.String),  # 'running', 'completed', 'failed'
+  sqlalchemy.Column("items_processed", sqlalchemy.Integer),
+  sqlalchemy.Column("items_added", sqlalchemy.Integer),
+  sqlalchemy.Column("error_message", sqlalchemy.String, nullable=True),
+)
+
 
 async def migrate() -> None:
   db = await get_db()
@@ -68,8 +83,7 @@ async def migrate() -> None:
       drop_schema = sqlalchemy.schema.DropTable(table)
       query = str(drop_schema.compile(dialect=dialect))
       await db.execute(query=query)
-    except sqlalchemy.exc.ProgrammingError:
-      print(f"WARNING: Table {table.name} already exists")
+    except asyncpg.exceptions.UndefinedTableError:
       pass
     create_schema = sqlalchemy.schema.CreateTable(table, if_not_exists=False)
     query = str(create_schema.compile(dialect=dialect))

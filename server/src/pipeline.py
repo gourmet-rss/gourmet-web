@@ -18,7 +18,7 @@ def get_content_embedding(content_item: feedparser.FeedParserDict) -> torch.Tens
   return embedding
 
 
-async def process_content_item(source_id: int, content_item: feedparser.FeedParserDict):
+async def process_content_item(source_id: int, content_item: feedparser.FeedParserDict, job_id: int):
   embedding = get_content_embedding(content_item)
   published_date = None
   if "published_parsed" in content_item:
@@ -27,6 +27,7 @@ async def process_content_item(source_id: int, content_item: feedparser.FeedPars
     published_date = datetime.datetime(*content_item.updated_parsed[:6])
   else:
     print(f"WARNING: No date found for {content_item.link}")
+    published_date = datetime.datetime.now()
 
   db = await database.get_db()
   try:
@@ -41,27 +42,108 @@ async def process_content_item(source_id: int, content_item: feedparser.FeedPars
         "embedding": embedding.tolist(),
       },
     )
-  except asyncpg.exceptions.UniqueViolationError as e:
+    await db.execute(
+      """UPDATE ingestion_jobs
+         SET items_added = items_added + 1
+         WHERE id = :job_id""",
+      {"job_id": job_id},
+    )
+    return True
+  except asyncpg.exceptions.UniqueViolationError:
     print(f"WARNING: Already processed {content_item.link}, skipping")
+    return False
 
 
-async def feed_ingestion(feed_id: int, feed_url: str):
+async def get_last_ingestion_date():
+  """Get the start time of the last successful ingestion job"""
+  db = await database.get_db()
+  result = await db.fetch_one(
+    """SELECT start_time
+       FROM ingestion_jobs
+       WHERE status = 'completed'
+       ORDER BY start_time DESC
+       LIMIT 1"""
+  )
+  return result["start_time"] if result else None
+
+
+async def create_ingestion_job():
+  """Create a new ingestion job and return its ID"""
+  db = await database.get_db()
+  result = await db.fetch_one(
+    """INSERT INTO ingestion_jobs
+       (start_time, status, items_processed, items_added)
+       VALUES (:start_time, :status, :items_processed, :items_added)
+       RETURNING id""",
+    {"start_time": datetime.datetime.now(), "status": "running", "items_processed": 0, "items_added": 0},
+  )
+  return result["id"]
+
+
+async def complete_ingestion_job(job_id: int, success: bool = True, error_message: str = None):
+  """Mark an ingestion job as completed or failed"""
+  db = await database.get_db()
+  status = "completed" if success else "failed"
+  await db.execute(
+    """UPDATE ingestion_jobs
+       SET end_time = :end_time, status = :status, error_message = :error_message
+       WHERE id = :job_id""",
+    {"end_time": datetime.datetime.now(), "status": status, "error_message": error_message, "job_id": job_id},
+  )
+
+
+async def feed_ingestion(feed_id: int, feed_url: str, job_id: int, last_ingestion_date: datetime.datetime = None):
   try:
-    print("Ingesting feed", feed_url)
+    print(f"Ingesting feed {feed_url}")
     feed = feedparser.parse(feed_url)
+    items_processed = 0
     for entry in feed.entries:
-      await process_content_item(feed_id, entry)
-  finally:
-    await database.close_db()
+      entry_date = None
+      if "published_parsed" in entry:
+        entry_date = datetime.datetime(*entry.published_parsed[:6], tzinfo=datetime.timezone.utc)
+      elif "updated_parsed" in entry:
+        entry_date = datetime.datetime(*entry.updated_parsed[:6], tzinfo=datetime.timezone.utc)
+      if last_ingestion_date and entry_date and entry_date <= last_ingestion_date:
+        print(f"Skipping {entry.link} - older than last ingestion")
+        continue
+      await process_content_item(feed_id, entry, job_id)
+      items_processed += 1
+    db = await database.get_db()
+    await db.execute(
+      """UPDATE ingestion_jobs
+         SET items_processed = items_processed + :count
+         WHERE id = :job_id""",
+      {"count": items_processed, "job_id": job_id},
+    )
+    return items_processed
+  except Exception as e:
+    print(f"Error ingesting feed {feed_url}: {e}")
+    raise
 
 
 async def main():
-  db = await database.get_db()
-
-  sources = await db.fetch_all(database.sources.select())
-
-  for source in sources:
-    await feed_ingestion(source.id, source.url)
+  try:
+    job_id = await create_ingestion_job()
+    print(f"Starting ingestion job {job_id}")
+    last_ingestion_date = await get_last_ingestion_date()
+    if last_ingestion_date:
+      print(f"Only processing items newer than {last_ingestion_date}")
+    db = await database.get_db()
+    sources = await db.fetch_all(database.sources.select())
+    total_processed = 0
+    for source in sources:
+      try:
+        processed = await feed_ingestion(source.id, source.url, job_id, last_ingestion_date)
+        total_processed += processed
+      except Exception as e:
+        print(f"Error processing source {source.url}: {e}")
+    await complete_ingestion_job(job_id)
+    print(f"Completed ingestion job {job_id}. Processed {total_processed} items.")
+  except Exception as e:
+    print(f"Error in ingestion pipeline: {e}")
+    await complete_ingestion_job(job_id, success=False, error_message=str(e))
+  finally:
+    await database.close_db()
 
 
 if __name__ == "__main__":
