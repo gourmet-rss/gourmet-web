@@ -6,8 +6,15 @@ from clerk_backend_api.jwks_helpers import AuthenticateRequestOptions
 from src import database
 
 
+CLERK_SECRET_KEY = os.getenv("CLERK_SECRET_KEY")
+
+
+if not CLERK_SECRET_KEY:
+  raise ValueError("CLERK_SECRET_KEY is not set in environment variables")
+
+
 async def authenticate(request: httpx.Request):
-  sdk = Clerk(bearer_auth=os.getenv("CLERK_SECRET_KEY"))
+  sdk = Clerk(bearer_auth=CLERK_SECRET_KEY)
   request_state = sdk.authenticate_request(request, AuthenticateRequestOptions())
   sub = request_state.payload["sub"]
   user_id = sub.split("_")[1]

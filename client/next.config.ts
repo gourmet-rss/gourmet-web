@@ -3,11 +3,14 @@ import { parse } from "dotenv";
 import path from "path";
 import fs from "fs";
 
-const envPath = path.join(__dirname, "../.env");
-const env = parse(fs.readFileSync(envPath));
+const nextConfig: NextConfig = {};
 
-const nextConfig: NextConfig = {
-  env,
-};
+if (process.env.NODE_ENV === "development") {
+  const devEnvPath = path.join(__dirname, "../.env");
+  if (!fs.existsSync(devEnvPath)) {
+    throw new Error("Development environment variables not found");
+  }
+  nextConfig.env = parse(fs.readFileSync(devEnvPath, "utf-8"));
+}
 
 export default nextConfig;

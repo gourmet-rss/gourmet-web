@@ -52,11 +52,7 @@ export default function ContentPicker() {
 
   const router = useRouter();
 
-  const {
-    mutate,
-    isPending: isSubmitting,
-    data: result,
-  } = useMutation({
+  const { mutate, isPending: isSubmitting } = useMutation({
     mutationFn: handleOnSubmit,
     onSuccess: () => {
       router.push("/");
