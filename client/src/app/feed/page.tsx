@@ -4,6 +4,7 @@ import { z } from "zod";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import Image from "next/image";
+import FeedbackButtons from "./FeedbackButtons";
 
 export default async function Feed() {
   const { getToken, sessionId } = await auth();
@@ -58,10 +59,7 @@ export default async function Feed() {
                 >
                   Read article ({new URL(contentItem.url).hostname})
                 </a>
-                <div className="flex gap-2">
-                  <button className="btn btn-primary">+</button>
-                  <button className="btn btn-secondary">-</button>
-                </div>
+                <FeedbackButtons contentId={contentItem.id} />
               </div>
             </article>
           </li>
