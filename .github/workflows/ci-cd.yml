@@ -3,10 +3,10 @@ name: CI/CD Pipeline
 on:
   push:
     branches:
-      - develop
       - main
-      - cameron # TODO - remove
-  workflow_dispatch: # Allow manual triggering
+      - cameron
+      - azizi
+  workflow_dispatch:
 
 jobs:
   build-and-push:
@@ -52,7 +52,7 @@ jobs:
 
   deploy:
     needs: build-and-push
-    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/cameron' # TODO - only main
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
 
     steps:
