@@ -6,6 +6,7 @@ async function getServerUrl() {
   if (typeof window === "undefined") {
     return SERVER_URL;
   }
+  // If on frontend, fetch the server URL from the API as it doesn't exist in the static frontend app
   const data = await fetch("/api/meta").then((res) => res.json());
   return data.serverUrl;
 }
