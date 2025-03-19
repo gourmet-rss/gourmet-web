@@ -13,7 +13,7 @@ export default async function FeedLayout({
       >
         Repeat onboarding
       </Link>
-      <h2 className="text-2xl font-bold">Your top posts today</h2>
+      <h2 className="text-2xl font-bold">Your Top Posts</h2>
       {children}
     </main>
   );

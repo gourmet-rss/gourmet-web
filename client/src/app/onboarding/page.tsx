@@ -90,9 +90,9 @@ export default function ContentPicker() {
                 >
                   <li
                     className={classNames(
-                      "text-start bg-slate-100 p-4 cursor-pointer hover:bg-slate-200 h-full flex items-center rounded-md",
+                      "text-start bg-slate-100/20 p-4 cursor-pointer hover:bg-slate-200/30 h-full flex items-center rounded-md",
                       selectedContentIds.includes(contentItem.id) &&
-                        "border-slate-400 border-2",
+                        "border-slate-400/50 border-2",
                     )}
                   >
                     {contentItem.title}

@@ -22,9 +22,9 @@ Run `uv sync` to install the dependencies
 
 Run `uv run -m src/database.py` to migrate the database
 
-Run `uv run -m src.pipeline` to insert a piece of sample content
+Run `uv run -m src.pipeline` to ingest feeds, adding new content to the database
 
-Run `uv run -m src.handler` to run the user request cycle as a CLI tool
+Run `uv run --env-file ../.env -m src.server` to run the server
 
 ### Frontend client
 
