@@ -2,13 +2,15 @@ import { ZodType } from "zod";
 
 export const SERVER_URL = process.env.SERVER_URL || "http://127.0.0.1:8000";
 
-async function getServerUrl() {
+async function getHeaders(getToken: () => Promise<string | null>) {
+  const headers = new Headers();
   if (typeof window === "undefined") {
-    return SERVER_URL;
+    const token = await getToken();
+    if (token) {
+      headers.set("Authorization", `Bearer ${token}`);
+    }
   }
-  // If on frontend, fetch the server URL from the API as it doesn't exist in the static frontend app
-  const data = await fetch("/api/meta").then((res) => res.json());
-  return data.serverUrl;
+  return headers;
 }
 
 export class HTTPError extends Error {
@@ -25,15 +27,19 @@ export async function serverFetch<T>(
   validator: ZodType<T>,
   getToken: () => Promise<string | null>,
 ) {
-  const token = await getToken();
-  const serverUrl = await getServerUrl();
-  const response = await fetch(`${serverUrl}${path}`, {
-    headers: token
-      ? {
-          Authorization: `Bearer ${token}`,
-        }
-      : {},
+  // Use the proxy route handler when on the client side
+  const url =
+    typeof window === "undefined"
+      ? `${SERVER_URL}${path}`
+      : `/api/proxy${path}`;
+  console.log("window", typeof window);
+
+  const headers = await getHeaders(getToken);
+
+  const response = await fetch(url, {
+    headers,
   });
+
   if (!response.ok) {
     throw new HTTPError(response);
   }
@@ -47,20 +53,23 @@ export async function serverPost<T>(
   getToken: () => Promise<string | null>,
   validator?: ZodType<T> | null,
 ) {
-  const token = await getToken();
-  const serverUrl = await getServerUrl();
-  const response = await fetch(`${serverUrl}${path}`, {
+  // Use the proxy route handler when on the client side
+  const url =
+    typeof window === "undefined"
+      ? `${SERVER_URL}${path}`
+      : `/api/proxy${path}`;
+
+  const headers = await getHeaders(getToken);
+
+  const response = await fetch(url, {
     method: "POST",
     body: JSON.stringify(requestData),
-    headers: token
-      ? {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        }
-      : {
-          "Content-Type": "application/json",
-        },
+    headers: {
+      ...headers,
+      "Content-Type": "application/json",
+    },
   });
+
   if (!response.ok) {
     throw new HTTPError(response);
   }
