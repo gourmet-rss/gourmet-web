@@ -64,7 +64,7 @@
     - name: Authenticate with GitHub Container Registry
       docker_login:
         registry: ghcr.io
-        username: "azizi-a"
+        username: "{{ lookup('env', 'GITHUB_USER') }}"
         password: "{{ lookup('env', 'GITHUB_TOKEN') }}"
 
     - name: Pull latest images

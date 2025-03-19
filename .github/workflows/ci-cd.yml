@@ -84,6 +84,7 @@ jobs:
       - name: Deploy with Ansible
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_USER: ${{ github.repository_owner }}
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         run: |
