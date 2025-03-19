@@ -93,7 +93,7 @@ async def get_recommendations(user_id: int):
 #
 #
 #
-async def update_user_embedding(user_id: int, updated_embedding: list):
+async def update_user_embedding(user_id: int, updated_embedding: torch.Tensor):
   db = await database.get_db()
   await db.execute(database.users.update().where(database.users.c.id == user_id), {"embedding": updated_embedding})
 
@@ -142,10 +142,11 @@ async def handle_feedback(user_id: int, content_id: int, rating: float):
   content = await db.fetch_one(database.content.select().where(database.content.c.id == content_id))
 
   # Adjust the embedding based on the rating using exponential moving average (EMA)
-  updated_embedding = constants.USER_ADJUST_FACTOR * content.embedding * rating + \
-                      ((1 - constants.USER_ADJUST_FACTOR) * user.embedding)
+  updated_embedding = constants.USER_ADJUST_FACTOR * content.embedding * rating + (
+    (1 - constants.USER_ADJUST_FACTOR) * user.embedding
+  )
 
-  await update_user_embedding(user_id, updated_embedding.tolist())
+  await update_user_embedding(user_id, updated_embedding)
   await update_user_content_rating(user_id, content_id, rating)
 
 
