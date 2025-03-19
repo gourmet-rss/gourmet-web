@@ -13,14 +13,17 @@ export default async function Feed() {
     return redirect("/");
   }
 
-  try {
-    const data = await serverFetch(
+  const fetchData = async () =>
+    await serverFetch(
       "/feed",
       z.object({
         content: z.array(userContentItemValidator),
       }),
       getToken,
     );
+
+  try {
+    const data = await fetchData();
 
     return (
       <ul className="flex flex-col gap-4">
@@ -59,7 +62,10 @@ export default async function Feed() {
                 >
                   Read article ({new URL(contentItem.url).hostname})
                 </a>
-                <FeedbackButtons contentId={contentItem.id} />
+                <FeedbackButtons
+                  contentId={contentItem.id}
+                  rating={contentItem.rating}
+                />
               </div>
             </article>
           </li>

@@ -7,13 +7,10 @@ export default async function FeedLayout({
 }) {
   return (
     <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-      <Link
-        href="/onboarding"
-        className="cursor-pointer text-blue-500 underline"
-      >
+      <Link href="/onboarding" className="btn btn-neutral self-end">
         Repeat onboarding
       </Link>
-      <h2 className="text-2xl font-bold">Your Top Posts</h2>
+      <h2 className="text-2xl font-bold self-center">Your Top Stories</h2>
       {children}
     </main>
   );
