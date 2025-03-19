@@ -4,37 +4,37 @@ import { NextRequest } from "next/server";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { all: string[] } },
+  { params }: { params: Promise<{ all: string[] }> },
 ) {
-  return handleRequest(request, params.all, "GET");
+  return handleRequest(request, (await params).all, "GET");
 }
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { all: string[] } },
+  { params }: { params: Promise<{ all: string[] }> },
 ) {
-  return handleRequest(request, params.all, "POST");
+  return handleRequest(request, (await params).all, "POST");
 }
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { all: string[] } },
+  { params }: { params: Promise<{ all: string[] }> },
 ) {
-  return handleRequest(request, params.all, "PUT");
+  return handleRequest(request, (await params).all, "PUT");
 }
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { all: string[] } },
+  { params }: { params: Promise<{ all: string[] }> },
 ) {
-  return handleRequest(request, params.all, "DELETE");
+  return handleRequest(request, (await params).all, "DELETE");
 }
 
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { all: string[] } },
+  { params }: { params: Promise<{ all: string[] }> },
 ) {
-  return handleRequest(request, params.all, "PATCH");
+  return handleRequest(request, (await params).all, "PATCH");
 }
 
 async function handleRequest(
