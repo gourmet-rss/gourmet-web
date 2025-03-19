@@ -4,42 +4,76 @@ import sentence_transformers
 import feedparser
 import datetime
 import asyncpg
+import html
 
 from src import database
 
 model = sentence_transformers.SentenceTransformer("paraphrase-distilroberta-base-v1")
 
 
-def get_content_embedding(content_item: feedparser.FeedParserDict) -> torch.Tensor:
-  text = content_item.title + ": " + content_item.summary
+def get_content_embedding(feed_item: feedparser.FeedParserDict) -> torch.Tensor:
+  text = feed_item.title + ": " + feed_item.summary
 
   embedding = model.encode(text, normalize_embeddings=True)
 
   return embedding
 
 
-async def process_content_item(source_id: int, content_item: feedparser.FeedParserDict, job_id: int):
-  embedding = get_content_embedding(content_item)
+async def process_feed_item(source_id: int, feed_item: feedparser.FeedParserDict, job_id: int):
+  embedding = get_content_embedding(feed_item)
   published_date = None
-  if "published_parsed" in content_item:
-    published_date = datetime.datetime(*content_item.published_parsed[:6])
-  elif "updated_parsed" in content_item:
-    published_date = datetime.datetime(*content_item.updated_parsed[:6])
+  if "published_parsed" in feed_item:
+    published_date = datetime.datetime(*feed_item.published_parsed[:6])
+  elif "updated_parsed" in feed_item:
+    published_date = datetime.datetime(*feed_item.updated_parsed[:6])
   else:
-    print(f"WARNING: No date found for {content_item.link}")
+    print(f"WARNING: No date found for {feed_item.link}")
     published_date = datetime.datetime.now()
+
+  # Determine content type based on available information
+  content_type = "article"  # Default type
+
+  # Check for podcast/audio content
+  if "enclosures" in feed_item:
+    for enclosure in feed_item.enclosures:
+      if enclosure.get("type", "").startswith("audio/"):
+        content_type = "audio"
+        break
+
+  # Check for video content
+  if content_type == "article" and "media_content" in feed_item:
+    for media in feed_item.media_content:
+      if media.get("type", "").startswith("video/"):
+        content_type = "video"
+        break
+
+  # Additional check in links for video/audio
+  if content_type == "article" and "links" in feed_item:
+    for link in feed_item.links:
+      link_type = link.get("type", "")
+      if link_type.startswith("video/"):
+        content_type = "video"
+        break
+      elif link_type.startswith("audio/"):
+        content_type = "audio"
+        break
+
+  # Sanitize text content
+  summary = html.escape(feed_item.summary) if hasattr(feed_item, "summary") else ""
 
   db = await database.get_db()
   try:
     await db.execute(
       database.content.insert(),
       {
-        "title": content_item.title,
-        "url": content_item.link,
-        "description": content_item.summary,
+        "title": feed_item.title,
+        "url": feed_item.link,
+        "description": summary,
         "source_id": source_id,
         "date": published_date,
         "embedding": embedding.tolist(),
+        "media": feed_item.get("media_content", []),
+        "content_type": content_type,
       },
     )
     await db.execute(
@@ -50,7 +84,7 @@ async def process_content_item(source_id: int, content_item: feedparser.FeedPars
     )
     return True
   except asyncpg.exceptions.UniqueViolationError:
-    print(f"WARNING: Already processed {content_item.link}, skipping")
+    print(f"WARNING: Already processed {link}, skipping")
     return False
 
 
@@ -106,7 +140,7 @@ async def feed_ingestion(feed_id: int, feed_url: str, job_id: int, last_ingestio
       if last_ingestion_date and entry_date and entry_date <= last_ingestion_date:
         print(f"Skipping {entry.link} - older than last ingestion")
         continue
-      await process_content_item(feed_id, entry, job_id)
+      await process_feed_item(feed_id, entry, job_id)
       items_processed += 1
     db = await database.get_db()
     await db.execute(

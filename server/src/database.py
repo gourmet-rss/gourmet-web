@@ -54,12 +54,26 @@ content = sqlalchemy.Table(
   "content",
   metadata,
   sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True),
+  sqlalchemy.Column("content_type", sqlalchemy.String),
   sqlalchemy.Column("title", sqlalchemy.String),
   sqlalchemy.Column("url", sqlalchemy.String, unique=True),
   sqlalchemy.Column("description", sqlalchemy.String),
   sqlalchemy.Column("source_id", sqlalchemy.Integer),
-  sqlalchemy.Column("embedding", Vector(constants.EMBED_DIM)),
   sqlalchemy.Column("date", sqlalchemy.DateTime(timezone=True)),
+  sqlalchemy.Column("embedding", Vector(constants.EMBED_DIM)),
+  sqlalchemy.Column("media", sqlalchemy.JSON, nullable=True),
+)
+
+user_content_ratings = sqlalchemy.Table(
+  "user_content_ratings",
+  metadata,
+  sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True),
+  sqlalchemy.Column("user_id", sqlalchemy.String, sqlalchemy.ForeignKey("users.id")),
+  sqlalchemy.Column("content_id", sqlalchemy.Integer, sqlalchemy.ForeignKey("content.id")),
+  # Can store ratings from -1 to 1 with 0.001 precision
+  sqlalchemy.Column("rating", sqlalchemy.Numeric(precision=4, scale=3)),
+  sqlalchemy.Column("timestamp", sqlalchemy.DateTime(timezone=True), server_default=sqlalchemy.func.now()),
+  sqlalchemy.UniqueConstraint("user_id", "content_id", name="uq_user_content_rating"),
 )
 
 ingestion_jobs = sqlalchemy.Table(

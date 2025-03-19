@@ -11,10 +11,18 @@ export default function Visualization() {
         {open ? "Hide" : "Show"} embeddings visualisation
       </button>
       {open && (
-        <iframe
-          src="http://localhost:8000/visualization"
-          className="w-[calc(100vw-40px)] h-[calc(100vh-40px)] fixed top-[40px] left-0 right-0 bg-white"
-        />
+        <div className="fixed top-0 left-0 w-full h-full z-40 bg-white">
+          <button
+            onClick={() => setOpen(false)}
+            className="btn btn-primary z-50 fixed top-12 left-8"
+          >
+            Close
+          </button>
+          <iframe
+            src="http://localhost:8000/visualization"
+            className="w-full h-full"
+          />
+        </div>
       )}
     </>
   );
