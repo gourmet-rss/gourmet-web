@@ -9,6 +9,18 @@ import json
 from contextlib import asynccontextmanager
 import sentry_sdk
 
+args = sys.argv[1:]
+is_prod = [x for x in args if x == "--prod"]
+is_prod = bool(len(is_prod))
+
+if is_prod:
+  sentry_sdk.init(
+    dsn="https://7c941a3688a4f8ebfecdf03d2df57a65@o4509004885196800.ingest.de.sentry.io/4509006216560720",
+    # Add data like request headers and IP for users,
+    # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
+    send_default_pii=True,
+  )
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -21,13 +33,6 @@ async def lifespan(app: FastAPI):
 
 # Create FastAPI app instance with lifespan
 app = FastAPI(title="Gourmet API", description="API for Gourmet content recommendation system", lifespan=lifespan)
-
-sentry_sdk.init(
-  dsn="https://7c941a3688a4f8ebfecdf03d2df57a65@o4509004885196800.ingest.de.sentry.io/4509006216560720",
-  # Add data like request headers and IP for users,
-  # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
-  send_default_pii=True,
-)
 
 
 # Add CORS middleware
@@ -134,8 +139,7 @@ def start_server(host: str = "0.0.0.0", port: int = 8000, debug: bool = False):
 
 if __name__ == "__main__":
   # Start the server when this file is run directly
-  args = sys.argv[1:]
-  if [x for x in args if x == "--prod"]:
+  if is_prod:
     start_server(debug=False)
   else:
     start_server(debug=True)
