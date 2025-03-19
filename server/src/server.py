@@ -7,6 +7,7 @@ from src import service, visualize, validators, auth, database
 import sys
 import json
 from contextlib import asynccontextmanager
+import sentry_sdk
 
 
 @asynccontextmanager
@@ -20,6 +21,14 @@ async def lifespan(app: FastAPI):
 
 # Create FastAPI app instance with lifespan
 app = FastAPI(title="Gourmet API", description="API for Gourmet content recommendation system", lifespan=lifespan)
+
+sentry_sdk.init(
+  dsn="https://7c941a3688a4f8ebfecdf03d2df57a65@o4509004885196800.ingest.de.sentry.io/4509006216560720",
+  # Add data like request headers and IP for users,
+  # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
+  send_default_pii=True,
+)
+
 
 # Add CORS middleware
 app.add_middleware(
