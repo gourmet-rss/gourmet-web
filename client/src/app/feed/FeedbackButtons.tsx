@@ -5,12 +5,16 @@ import { serverPost } from "@/util/http";
 import { useState } from "react";
 interface FeedbackButtonsProps {
   contentId: number;
+  rating: number;
 }
 
-export default function FeedbackButtons({ contentId }: FeedbackButtonsProps) {
+export default function FeedbackButtons({
+  contentId,
+  rating,
+}: FeedbackButtonsProps) {
   const { getToken } = useAuth();
-  const [clickedUp, setClickedUp] = useState(false);
-  const [clickedDown, setClickedDown] = useState(false);
+  const [clickedUp, setClickedUp] = useState(rating > 0);
+  const [clickedDown, setClickedDown] = useState(rating < 0);
 
   const sendFeedback = async (rating: number) => {
     try {
@@ -30,24 +34,24 @@ export default function FeedbackButtons({ contentId }: FeedbackButtonsProps) {
   return (
     <div className="flex gap-2">
       <button
-        className="btn btn-primary"
+        className={`btn ${clickedUp ? "btn-primary-disabled" : "btn-primary"}`}
         onClick={() => {
-          sendFeedback(1);
-          setClickedUp(true);
+          const rating = !clickedUp ? 1 : -1;
+          sendFeedback(rating);
+          setClickedUp(!clickedUp);
           setClickedDown(false);
         }}
-        disabled={clickedUp}
       >
         +
       </button>
       <button
-        className="btn btn-secondary"
+        className={`btn ${clickedDown ? "btn-secondary-disabled" : "btn-secondary"}`}
         onClick={() => {
-          sendFeedback(-1);
+          const rating = !clickedDown ? -1 : 1;
+          sendFeedback(rating);
           setClickedUp(false);
-          setClickedDown(true);
+          setClickedDown(!clickedDown);
         }}
-        disabled={clickedDown}
       >
         -
       </button>

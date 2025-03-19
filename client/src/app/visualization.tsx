@@ -1,23 +1,63 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { serverFetch } from "@/util/http";
+import { userContentItemValidator } from "@/validators";
+import { z } from "zod";
+import { useAuth } from "@clerk/nextjs";
+
+const k = 5;
+
+const getContent = async (getToken: () => Promise<string | null>) =>
+  await serverFetch(
+    "/feed",
+    z.object({
+      content: z.array(userContentItemValidator),
+    }),
+    getToken,
+    {
+      cache: "no-store",
+      next: { revalidate: -1 },
+    },
+  );
 
 export default function Visualization() {
   const [open, setOpen] = useState(false);
+  const [content, setContent] = useState<
+    z.infer<typeof userContentItemValidator>[]
+  >([]);
+  const { getToken } = useAuth();
+
+  useEffect(() => {
+    getContent(getToken).then((data) => setContent(data.content));
+  }, [getToken]);
 
   return (
     <>
-      <button onClick={() => setOpen(!open)} className="btn">
+      <button
+        onClick={() => setOpen(!open)}
+        className="btn btn-primary fixed bottom-4 left-20 z-50 shadow-md"
+      >
         {open ? "Hide" : "Show"} embeddings visualisation
       </button>
       {open && (
         <div className="fixed top-0 left-0 w-full h-full z-40 bg-white">
-          <button
-            onClick={() => setOpen(false)}
-            className="btn btn-primary z-50 fixed top-12 left-8"
-          >
-            Close
-          </button>
+          <div className="flex flex-col gap-4">
+            <h2 className="text-2xl font-bold">
+              The first {k} content items are:
+            </h2>
+            {content.slice(0, k).map((item) => (
+              <div key={item.id}>
+                <h3 className="text-md font-bold">{item.title}</h3>
+                <p
+                  className="text-sm"
+                  dangerouslySetInnerHTML={{
+                    __html: item.description.slice(0, 100) + "...",
+                  }}
+                />
+              </div>
+            ))}
+          </div>
           <iframe
             src="http://localhost:8000/visualization"
             className="w-full h-full"

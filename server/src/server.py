@@ -3,12 +3,23 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 from typing import Dict, Any
 from fastapi.responses import HTMLResponse
-from src import service, visualize, validators, auth
+from src import service, visualize, validators, auth, database
 import sys
 import json
+from contextlib import asynccontextmanager
 
-# Create FastAPI app instance
-app = FastAPI(title="Gourmet API", description="API for Gourmet content recommendation system")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+  # Startup: setup resources
+  await startup_db_client()
+  yield
+  # Shutdown: clean up resources
+  await shutdown_db_client()
+
+
+# Create FastAPI app instance with lifespan
+app = FastAPI(title="Gourmet API", description="API for Gourmet content recommendation system", lifespan=lifespan)
 
 # Add CORS middleware
 app.add_middleware(
@@ -84,6 +95,20 @@ async def feedback(request: Request, data: validators.Feedback) -> Dict[str, str
   user = await auth.authenticate(request)
   await service.handle_feedback(user.id, data.content_id, data.rating)
   return {"status": "success"}
+
+
+async def startup_db_client():
+  db = await database.get_db()
+  try:
+    await db.execute("SELECT 1")
+    print("Database connection established")
+  except Exception as e:
+    print(f"Database connection failed: {e}")
+    raise e
+
+
+async def shutdown_db_client():
+  await database.close_db()
 
 
 def start_server(host: str = "0.0.0.0", port: int = 8000, debug: bool = False):
