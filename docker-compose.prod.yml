@@ -1,17 +1,20 @@
 services:
+  postgres:
+    environment:
+      POSTGRES_PASSWORD: $POSTGRES_PASSWORD
   server:
-    image: cameronnimmo/gourmet-server
+    image: ghcr.io/${GITHUB_USER}/gourmet-server
     ports:
       - "8000:8000"
     environment:
       - CLERK_SECRET_KEY
-      - DATABASE_URL=postgresql://postgres:password@postgres:5432
+      - DATABASE_URL=postgresql+asyncpg://postgres:$POSTGRES_PASSWORD@postgres:5432
     depends_on:
       - postgres
   client:
-    image: cameronnimmo/gourmet-client
+    image: ghcr.io/${GITHUB_USER}/gourmet-client
     ports:
-      - "3000:3000"
+      - "80:3000"
     environment:
       - CLERK_SECRET_KEY
       - SERVER_URL=http://server:8000

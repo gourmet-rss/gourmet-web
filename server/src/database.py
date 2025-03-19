@@ -7,7 +7,6 @@ import json
 import os
 from jsmin import jsmin
 from src import constants
-import asyncpg
 
 dirname = os.path.dirname(__file__)
 
@@ -20,7 +19,7 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 async def get_db():
   global _pool
   if _pool is None:
-    _pool = Database(DATABASE_URL or "postgresql://postgres:password@localhost:5433")
+    _pool = Database(DATABASE_URL or "postgresql+asyncpg://postgres:password@localhost:5433")
     await _pool.connect()
   return _pool
 
@@ -90,26 +89,8 @@ ingestion_jobs = sqlalchemy.Table(
 )
 
 
-async def migrate() -> None:
-  # Drop tables in reverse order to avoid foreign key constraints
+async def seed() -> None:
   db = await get_db()
-  for table in reversed(list(metadata.tables.values())):
-    try:
-      drop_schema = sqlalchemy.schema.DropTable(table, if_exists=True)
-      query = str(drop_schema.compile(dialect=dialect))
-      await db.execute(query=query)
-    except asyncpg.exceptions.UndefinedTableError:
-      print(f"WARNING: Table {table.name} does not exist")
-      pass
-    except Exception as e:
-      print(f"Error dropping table {table.name}: {e}")
-      raise e
-
-  # Create tables in order
-  for table in metadata.tables.values():
-    create_schema = sqlalchemy.schema.CreateTable(table, if_not_exists=False)
-    query = str(create_schema.compile(dialect=dialect))
-    await db.execute(query=query)
 
   with open(os.path.join(dirname, "../feeds.jsonc"), "r") as f:
     data = json.loads(jsmin(f.read()))
@@ -130,6 +111,6 @@ async def migrate() -> None:
 
 
 if __name__ == "__main__":
-  print("Running migrations...")
-  asyncio.run(migrate())
+  print("Seeding database...")
+  asyncio.run(seed())
   print("> Done")

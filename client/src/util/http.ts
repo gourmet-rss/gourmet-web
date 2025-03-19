@@ -1,6 +1,17 @@
 import { ZodType } from "zod";
 
-const SERVER_URL = process.env.SERVER_URL || "http://127.0.0.1:8000";
+export const SERVER_URL = process.env.SERVER_URL || "http://127.0.0.1:8000";
+
+async function getHeaders(getToken: () => Promise<string | null>) {
+  const headers = new Headers();
+  if (typeof window === "undefined") {
+    const token = await getToken();
+    if (token) {
+      headers.set("Authorization", `Bearer ${token}`);
+    }
+  }
+  return headers;
+}
 
 export class HTTPError extends Error {
   public readonly status: number;
@@ -16,14 +27,18 @@ export async function serverFetch<T>(
   validator: ZodType<T>,
   getToken: () => Promise<string | null>,
 ) {
-  const token = await getToken();
-  const response = await fetch(`${SERVER_URL}${path}`, {
-    headers: token
-      ? {
-          Authorization: `Bearer ${token}`,
-        }
-      : {},
+  // Use the proxy route handler when on the client side
+  const url =
+    typeof window === "undefined"
+      ? `${SERVER_URL}${path}`
+      : `/api/proxy${path}`;
+
+  const headers = await getHeaders(getToken);
+
+  const response = await fetch(url, {
+    headers,
   });
+
   if (!response.ok) {
     throw new HTTPError(response);
   }
@@ -37,19 +52,23 @@ export async function serverPost<T>(
   getToken: () => Promise<string | null>,
   validator?: ZodType<T> | null,
 ) {
-  const token = await getToken();
-  const response = await fetch(`${SERVER_URL}${path}`, {
+  // Use the proxy route handler when on the client side
+  const url =
+    typeof window === "undefined"
+      ? `${SERVER_URL}${path}`
+      : `/api/proxy${path}`;
+
+  const headers = await getHeaders(getToken);
+
+  const response = await fetch(url, {
     method: "POST",
     body: JSON.stringify(requestData),
-    headers: token
-      ? {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        }
-      : {
-          "Content-Type": "application/json",
-        },
+    headers: {
+      ...headers,
+      "Content-Type": "application/json",
+    },
   });
+
   if (!response.ok) {
     throw new HTTPError(response);
   }
