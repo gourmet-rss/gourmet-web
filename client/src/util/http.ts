@@ -1,7 +1,14 @@
 import { ZodType } from "zod";
 
-const SERVER_URL =
-  process.env.NEXT_PUBLIC_SERVER_URL || "http://127.0.0.1:8000";
+export const SERVER_URL = process.env.SERVER_URL || "http://127.0.0.1:8000";
+
+async function getServerUrl() {
+  if (typeof window === "undefined") {
+    return SERVER_URL;
+  }
+  const data = await fetch("/api/meta").then((res) => res.json());
+  return data.serverUrl;
+}
 
 export class HTTPError extends Error {
   public readonly status: number;
@@ -18,7 +25,8 @@ export async function serverFetch<T>(
   getToken: () => Promise<string | null>,
 ) {
   const token = await getToken();
-  const response = await fetch(`${SERVER_URL}${path}`, {
+  const serverUrl = await getServerUrl();
+  const response = await fetch(`${serverUrl}${path}`, {
     headers: token
       ? {
           Authorization: `Bearer ${token}`,
@@ -39,7 +47,8 @@ export async function serverPost<T>(
   validator?: ZodType<T> | null,
 ) {
   const token = await getToken();
-  const response = await fetch(`${SERVER_URL}${path}`, {
+  const serverUrl = await getServerUrl();
+  const response = await fetch(`${serverUrl}${path}`, {
     method: "POST",
     body: JSON.stringify(requestData),
     headers: token

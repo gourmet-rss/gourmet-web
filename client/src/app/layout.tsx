@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
 import Visualization from "./visualization";
+import Image from "next/image";
 import {
   ClerkProvider,
   SignInButton,
@@ -41,18 +42,24 @@ export default function RootLayout({
           <body
             className={`${geistSans.variable} ${geistMono.variable} antialiased`}
           >
-            <div className="flex items-center h-12 px-3 gap-2">
-              <SignedIn>
-                <UserButton />
-              </SignedIn>
-              <SignedOut>
-                <SignInButton>
-                  <button className="btn">Sign in</button>
-                </SignInButton>
-                <SignUpButton>
-                  <button className="btn">Sign up</button>
-                </SignUpButton>
-              </SignedOut>
+            <div className="flex items-center justify-between h-12 px-3 gap-2 border-b">
+              <div className="flex items-center gap-2">
+                <Image src="/logo.svg" alt="Gourmet Logo" width={32} height={32} className="h-8 w-8" />
+                <span className="font-semibold text-lg">gourmet</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <SignedIn>
+                  <UserButton />
+                </SignedIn>
+                <SignedOut>
+                  <SignInButton>
+                    <button className="btn">Sign in</button>
+                  </SignInButton>
+                  <SignUpButton>
+                    <button className="btn">Sign up</button>
+                  </SignUpButton>
+                </SignedOut>
+              </div>
             </div>
             <Visualization />
             <div className="lg:max-w-4/6 !mx-auto">{children}</div>

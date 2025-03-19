@@ -41,25 +41,27 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 Follow these steps when making changes to the database schema:
 
 1. Make changes to the database schema in `server/src/database.py`
-2. Run `DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:5433 uv run -m alembic revision --autogenerate -m "description"` to generate a new migration based on your changes, replacing `description` with a description of the changes.
-3. Run `DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:5433 uv run -m alembic upgrade head` to apply the migration.
-4. If you need to revert the migration, run `DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:5433 uv run -m alembic downgrade -1`. Then delete the migration file manually.
+2. Run `uv run -m alembic revision --autogenerate -m "description"` to generate a new migration based on your changes, replacing `description` with a description of the changes.
+3. Run `uv run -m alembic upgrade head` to apply the migration.
+4. If you need to revert the migration, run `uv run -m alembic downgrade -1`. Then delete the migration file manually.
 
 ## Deployment
 
 ### Building for production
 
+The following commands should not be run locally directly, they are handled by the ci/cd actions workflow (see below).
+
 #### Server
 
-Run `docker buildx build --platform linux/amd64 -t ghcr.io/azizi-a/gourmet-server ./server` to build the docker image
+Run `docker buildx build --platform linux/amd64 -t ghcr.io/gourmet-rss/gourmet-server ./server` to build the docker image
 
-Run `docker push ghcr.io/azizi-a/gourmet-server` to push the image to the registry (or run the build command with `--push`)
+Run `docker push ghcr.io/gourmet-rss/gourmet-server` to push the image to the registry (or run the build command with `--push`)
 
 #### Client
 
-Run `docker buildx build --platform linux/amd64 -t ghcr.io/azizi-a/gourmet-client ./client --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$(grep NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY .env | cut -d '=' -f2)` to build the docker image (pulling the clerk publishable key from the .env file in the root directory)
+Run `docker buildx build --platform linux/amd64 -t ghcr.io/gourmet-rss/gourmet-client ./client --build-arg NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=$(grep NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY .env | cut -d '=' -f2)` to build the docker image (pulling the clerk publishable key from the .env file in the root directory)
 
-Run `docker push ghcr.io/azizi-a/gourmet-client` to push the image to the registry (or run the build command with `--push`)
+Run `docker push ghcr.io/gourmet-rss/gourmet-client` to push the image to the registry (or run the build command with `--push`)
 
 ### Running in production
 
