@@ -17,8 +17,8 @@ async def get_a_recommendation_id(user_embedding: list, recommendation_ids: list
   db = await database.get_db()
 
   # Create a small adjustment to the user embedding and use it to find a new recommendation
-  max_change_proportion = 0.0001
-  random_delta = (2 * max_change_proportion * torch.rand(constants.EMBED_DIM)) - 1
+  max_change_proportion = 1e-4
+  random_delta = (2 * torch.rand(constants.EMBED_DIM) - 1) * max_change_proportion
   new_embedding = torch.tensor(user_embedding) + random_delta
 
   if len(recommendation_ids) == 0:
