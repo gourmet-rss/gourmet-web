@@ -32,7 +32,6 @@ export async function serverFetch<T>(
     typeof window === "undefined"
       ? `${SERVER_URL}${path}`
       : `/api/proxy${path}`;
-  console.log("window", typeof window);
 
   const headers = await getHeaders(getToken);
 
