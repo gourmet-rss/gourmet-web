@@ -9,11 +9,14 @@ from src.database import metadata
 
 from alembic import context
 
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://postgres:password@localhost:5433")
+print(f"DATABASE_URL: {DATABASE_URL}")
+
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
 config.set_main_option(
-  "sqlalchemy.url", os.getenv("DATABASE_URL", "postgresql+asyncpg://postgres:password@localhost:5433")
+  "sqlalchemy.url", DATABASE_URL
 )
 
 # Interpret the config file for Python logging.
