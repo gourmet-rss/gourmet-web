@@ -3,8 +3,12 @@ import uuid
 import numpy as np
 from datetime import datetime
 from src import database, util, constants
+import sqlalchemy
 
 
+#
+#
+#
 async def get_a_recommendation_id(user_embedding: list, recommendation_ids: list):
   """
   Get a single recommendation id for a user
@@ -86,6 +90,40 @@ async def get_recommendations(user_id: int):
   return content
 
 
+#
+#
+#
+async def update_user_embedding(user_id: int, updated_embedding: list):
+  db = await database.get_db()
+  await db.execute(database.users.update().where(database.users.c.id == user_id), {"embedding": updated_embedding})
+
+
+async def update_user_content_rating(user_id: int, content_id: int, rating: float):
+  db = await database.get_db()
+
+  # First check if a rating already exists
+  existing_rating = await db.fetch_one(
+    database.user_content_ratings.select().where(
+      (database.user_content_ratings.c.user_id == user_id) & (database.user_content_ratings.c.content_id == content_id)
+    )
+  )
+
+  if existing_rating:
+    # Update existing rating
+    await db.execute(
+      database.user_content_ratings.update().where(
+        (database.user_content_ratings.c.user_id == user_id)
+        & (database.user_content_ratings.c.content_id == content_id)
+      ),
+      {"rating": rating, "timestamp": sqlalchemy.func.now()},
+    )
+  else:
+    # Insert new rating
+    await db.execute(
+      database.user_content_ratings.insert(), {"user_id": user_id, "content_id": content_id, "rating": rating}
+    )
+
+
 async def handle_feedback(user_id: int, content_id: int, rating: float):
   """
   Adjust user embedding based on feedback
@@ -104,14 +142,16 @@ async def handle_feedback(user_id: int, content_id: int, rating: float):
   content = await db.fetch_one(database.content.select().where(database.content.c.id == content_id))
 
   # Adjust the embedding based on the rating using exponential moving average (EMA)
-  updated_embedding = (
-    constants.USER_ADJUST_FACTOR * content.embedding * rating + (1 - constants.USER_ADJUST_FACTOR) * user.embedding
-  )
+  updated_embedding = constants.USER_ADJUST_FACTOR * content.embedding * rating + \
+                      ((1 - constants.USER_ADJUST_FACTOR) * user.embedding)
 
-  update_statement = database.users.update().where(database.users.c.id == user_id)
-  await db.execute(update_statement, {"embedding": updated_embedding.tolist()})
+  await update_user_embedding(user_id, updated_embedding.tolist())
+  await update_user_content_rating(user_id, content_id, rating)
 
 
+#
+#
+#
 async def sign_up():
   user_id = uuid.uuid4()
 
@@ -122,6 +162,9 @@ async def sign_up():
   return user
 
 
+#
+#
+#
 async def get_onboarding_content(existing_selected_content_ids: list):
   db = await database.get_db()
 
@@ -154,6 +197,9 @@ async def get_onboarding_content(existing_selected_content_ids: list):
   return existing_content + sample_content
 
 
+#
+#
+#
 async def onboard(user_id: int, liked_content_ids: list):
   """
   Onboard a user by creating, then adjusting their embedding based on their feedback
