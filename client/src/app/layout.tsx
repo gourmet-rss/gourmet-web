@@ -12,6 +12,8 @@ import {
   SignedOut,
   UserButton,
 } from "@clerk/nextjs";
+import Link from "next/link";
+import { Cog } from "lucide-react";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -64,6 +66,23 @@ export default function RootLayout({
                   </div>
                   <div className="flex items-center gap-3">
                     <SignedIn>
+                      <div className="dropdown dropdown-end">
+                        <div
+                          tabIndex={0}
+                          role="button"
+                          className="btn btn-ghost btn-circle"
+                        >
+                          <Cog className="h-5 w-5" />
+                        </div>
+                        <ul
+                          tabIndex={0}
+                          className="dropdown-content z-[1] menu p-2 shadow bg-base-100 rounded-box w-52"
+                        >
+                          <li>
+                            <Link href="/onboarding">Repeat onboarding</Link>
+                          </li>
+                        </ul>
+                      </div>
                       <UserButton afterSignOutUrl="/" />
                     </SignedIn>
                     <SignedOut>
