@@ -3,6 +3,8 @@
 import { useAuth } from "@clerk/nextjs";
 import { serverPost } from "@/util/http";
 import { useState } from "react";
+import { ThumbsUp, ThumbsDown } from "lucide-react";
+
 interface FeedbackButtonsProps {
   contentId: number;
   rating: number;
@@ -32,9 +34,14 @@ export default function FeedbackButtons({
   };
 
   return (
-    <div className="flex gap-2">
+    <div className="flex items-center space-x-2">
       <button
-        className={`btn ${clickedUp ? "btn-primary-disabled" : "btn-primary"}`}
+        className={`p-1.5 rounded-full transition-colors ${
+          clickedUp
+            ? "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"
+            : "text-gray-500 hover:text-green-600 hover:bg-green-50 dark:text-gray-400 dark:hover:text-green-400 dark:hover:bg-green-900/20"
+        }`}
+        aria-label="Like"
         onClick={() => {
           const rating = !clickedUp ? 1 : -1;
           sendFeedback(rating);
@@ -42,10 +49,15 @@ export default function FeedbackButtons({
           setClickedDown(false);
         }}
       >
-        +
+        <ThumbsUp size={18} className={clickedUp ? "fill-current" : ""} />
       </button>
       <button
-        className={`btn ${clickedDown ? "btn-secondary-disabled" : "btn-secondary"}`}
+        className={`p-1.5 rounded-full transition-colors ${
+          clickedDown
+            ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
+            : "text-gray-500 hover:text-red-600 hover:bg-red-50 dark:text-gray-400 dark:hover:text-red-400 dark:hover:bg-red-900/20"
+        }`}
+        aria-label="Dislike"
         onClick={() => {
           const rating = !clickedDown ? -1 : 1;
           sendFeedback(rating);
@@ -53,7 +65,7 @@ export default function FeedbackButtons({
           setClickedDown(!clickedDown);
         }}
       >
-        -
+        <ThumbsDown size={18} className={clickedDown ? "fill-current" : ""} />
       </button>
     </div>
   );

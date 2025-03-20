@@ -26,15 +26,26 @@ export default async function Feed() {
     const data = await fetchData();
 
     return (
-      <ul className="flex flex-col gap-4">
-        {data.content.map((contentItem) => (
-          <li key={contentItem.id} className="card card-border bg-slate-500/5">
-            <article className="card-body">
-              <h3 className="card-title">{contentItem.title}</h3>
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className="mb-8 border-b border-gray-200 dark:border-gray-800 pb-4">
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 font-serif">
+            Today&apos;s Curated Feed
+          </h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-2 italic">
+            Personalized content, delivered fresh daily
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {data.content.map((contentItem) => (
+            <div
+              key={contentItem.id}
+              className="bg-white dark:bg-gray-900 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col h-full border border-gray-200 dark:border-gray-800"
+            >
               {contentItem.media?.length ? (
                 (contentItem.media[0].medium === "image" ||
                   contentItem.media[0].type?.startsWith("image/")) && (
-                  <div className="w-full h-48">
+                  <div className="relative w-full h-48 overflow-hidden">
                     <Image
                       src={contentItem.media[0].url}
                       alt={
@@ -44,33 +55,71 @@ export default async function Feed() {
                       }
                       width={contentItem.media[0].width ?? 100}
                       height={contentItem.media[0].height ?? 100}
-                      className="h-full w-auto object-cover mx-auto"
+                      className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
                     />
+                    <div className="absolute top-0 left-0 bg-indigo-600 text-white px-3 py-1 text-xs uppercase tracking-wider font-bold">
+                      Featured
+                    </div>
                   </div>
                 )
               ) : (
-                <div className="w-full h-4" />
+                <div className="w-full h-48 bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center">
+                  <span className="text-white text-lg font-bold">
+                    Gourmet Article
+                  </span>
+                </div>
               )}
-              <p
-                dangerouslySetInnerHTML={{ __html: contentItem.description }}
-              />
-              <div className="flex justify-between items-center gap-2">
-                <a
-                  className="link link-hover"
-                  href={contentItem.url}
-                  target="_blank"
-                >
-                  Read article ({new URL(contentItem.url).hostname})
-                </a>
-                <FeedbackButtons
-                  contentId={contentItem.id}
-                  rating={contentItem.rating}
+
+              <div className="p-5 flex flex-col flex-grow">
+                <div className="flex items-center text-xs text-gray-500 dark:text-gray-400 mb-3 space-x-2">
+                  <span className="bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-full">
+                    {new URL(contentItem.url).hostname}
+                  </span>
+                  <span>•</span>
+                  <span>{new Date().toLocaleDateString()}</span>
+                </div>
+
+                <h3 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-3 line-clamp-2 font-serif">
+                  {contentItem.title}
+                </h3>
+
+                <div
+                  className="text-gray-700 dark:text-gray-300 mb-4 line-clamp-3 text-sm leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: contentItem.description }}
                 />
+
+                <div className="mt-auto pt-4 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center">
+                  <a
+                    className="inline-flex items-center text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 font-medium text-sm transition-colors"
+                    href={contentItem.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Read full article
+                    <svg
+                      className="w-4 h-4 ml-1"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                      <polyline points="15 3 21 3 21 9"></polyline>
+                      <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                  </a>
+                  <FeedbackButtons
+                    contentId={contentItem.id}
+                    rating={contentItem.rating}
+                  />
+                </div>
               </div>
-            </article>
-          </li>
-        ))}
-      </ul>
+            </div>
+          ))}
+        </div>
+      </div>
     );
   } catch (error) {
     if (error instanceof HTTPError && error.status === 409) {
