@@ -2,6 +2,8 @@ services:
   postgres:
     environment:
       POSTGRES_PASSWORD: $POSTGRES_PASSWORD
+    ports:
+      - "9876:5432"
   server:
     image: ghcr.io/${GITHUB_USER}/gourmet-server
     ports:
