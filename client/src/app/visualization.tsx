@@ -15,10 +15,6 @@ const getContent = async (getToken: () => Promise<string | null>) =>
       content: z.array(userContentItemValidator),
     }),
     getToken,
-    {
-      cache: "no-store",
-      next: { revalidate: -1 },
-    },
   );
 
 export default function Visualization() {
