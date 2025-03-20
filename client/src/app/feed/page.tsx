@@ -3,7 +3,6 @@ import { userContentItemValidator } from "@/validators";
 import { z } from "zod";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import Image from "next/image";
 import FeedbackButtons from "./FeedbackButtons";
 
 export const feedGridClass =
