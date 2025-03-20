@@ -36,7 +36,8 @@ export default async function Feed() {
               (contentItem.media[0].medium === "image" ||
                 contentItem.media[0].type?.startsWith("image/")) && (
                 <div className="relative w-full h-48 overflow-hidden">
-                  <Image
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
                     src={contentItem.media[0].url}
                     alt={
                       contentItem.media[0].medium ??
@@ -47,17 +48,13 @@ export default async function Feed() {
                     height={contentItem.media[0].height ?? 100}
                     className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
                   />
-                  <div className="absolute top-0 left-0 bg-indigo-600 text-white px-3 py-1 text-xs uppercase tracking-wider font-bold">
+                  {/* <div className="absolute top-0 left-0 bg-indigo-600 text-white px-3 py-1 text-xs uppercase tracking-wider font-bold">
                     Featured
-                  </div>
+                  </div> */}
                 </div>
               )
             ) : (
-              <div className="w-full h-48 bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center">
-                <span className="text-white text-lg font-bold">
-                  Gourmet Article
-                </span>
-              </div>
+              <div className="w-full h-48 bg-gradient-to-r from-indigo-500 to-purple-600 flex items-center justify-center" />
             )}
 
             <div className="p-5 flex flex-col flex-grow">
