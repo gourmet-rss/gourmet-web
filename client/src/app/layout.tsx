@@ -47,23 +47,25 @@ export default function RootLayout({
             <header className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm sticky top-0 z-10">
               <div className="max-w-6xl mx-auto px-4">
                 <div className="flex items-center justify-between h-16">
-                  <div className="flex items-center gap-3">
-                    <Image
-                      src="/logo.svg"
-                      alt="Gourmet Logo"
-                      width={32}
-                      height={32}
-                      className="h-10 w-10 border-2 border-neutral-300 dark:border-neutral-700 rounded-full"
-                    />
-                    <div className="flex flex-col">
-                      <span className="font-serif font-bold text-xl text-gray-900 dark:text-white leading-tight tracking-tight">
-                        gourmet
-                      </span>
-                      <span className="text-xs text-gray-500 dark:text-gray-400">
-                        curated content daily
-                      </span>
+                  <Link href="/" className="cursor-pointer">
+                    <div className="flex items-center gap-3">
+                      <Image
+                        src="/logo.svg"
+                        alt="Gourmet Logo"
+                        width={32}
+                        height={32}
+                        className="h-10 w-10 border-2 border-neutral-300 dark:border-neutral-700 rounded-full"
+                      />
+                      <div className="flex flex-col">
+                        <span className="font-serif font-bold text-xl text-gray-900 dark:text-white leading-tight tracking-tight">
+                          gourmet
+                        </span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          curated content daily
+                        </span>
+                      </div>
                     </div>
-                  </div>
+                  </Link>
                   <div className="flex items-center gap-3">
                     <SignedIn>
                       <div className="dropdown dropdown-end">
