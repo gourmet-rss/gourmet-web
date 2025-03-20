@@ -4,9 +4,7 @@ import { z } from "zod";
 import { auth } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import FeedbackButtons from "./FeedbackButtons";
-
-export const feedGridClass =
-  "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6";
+import { feedGridClass } from "./util";
 
 export default async function Feed() {
   const { getToken, sessionId } = await auth();

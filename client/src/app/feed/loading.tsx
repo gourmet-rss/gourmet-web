@@ -1,5 +1,5 @@
 import classNames from "classnames";
-import { feedGridClass } from "./page";
+import { feedGridClass } from "./util";
 
 export default function Loading() {
   return (
