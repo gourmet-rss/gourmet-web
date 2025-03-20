@@ -17,8 +17,7 @@ async def get_a_recommendation_id(user_embedding: list, recommendation_ids: list
   db = await database.get_db()
 
   # Create a small adjustment to the user embedding and use it to find a new recommendation
-  max_change_proportion = 1e-4
-  random_delta = (2 * torch.rand(constants.EMBED_DIM) - 1) * max_change_proportion
+  random_delta = (2 * torch.rand(constants.EMBED_DIM) - 1) * constants.MAX_SEARCH_DISTANCE
   new_embedding = torch.tensor(user_embedding) + random_delta
 
   if len(recommendation_ids) == 0:
@@ -145,6 +144,15 @@ async def handle_feedback(user_id: int, content_id: int, rating: float):
   updated_embedding = constants.USER_ADJUST_FACTOR * content.embedding * rating + (
     (1 - constants.USER_ADJUST_FACTOR) * user.embedding
   )
+
+  # Normalize the embedding to unit length
+  norm = torch.linalg.vector_norm(torch.tensor(updated_embedding))
+  if norm > 0:
+    updated_embedding = updated_embedding / norm
+
+  # Print the geometric length (norm) of the embedding
+  print("Embedding norm: ", norm)
+  print("Updated embedding norm: ", torch.linalg.vector_norm(torch.tensor(updated_embedding)))
 
   await update_user_embedding(user_id, updated_embedding)
   await update_user_content_rating(user_id, content_id, rating)
