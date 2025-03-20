@@ -4,6 +4,7 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --subtle-pattern: rgba(0, 0, 0, 0.02);
 }
 
 @theme inline {
@@ -17,11 +18,31 @@
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
+    --subtle-pattern: rgba(255, 255, 255, 0.02);
   }
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
+  background-image: 
+    linear-gradient(var(--subtle-pattern) 1px, transparent 1px),
+    linear-gradient(90deg, var(--subtle-pattern) 1px, transparent 1px);
+  background-size: 20px 20px;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Newspaper-style typography enhancements */
+.font-serif {
+  font-family: 'Georgia', serif;
+}
+
+/* Drop cap for first paragraph in articles */
+.article-content > p:first-of-type:first-letter {
+  float: left;
+  font-family: 'Georgia', serif;
+  font-size: 3.5em;
+  line-height: 0.8;
+  padding-right: 0.1em;
+  padding-top: 0.1em;
 }
