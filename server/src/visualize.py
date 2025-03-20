@@ -39,22 +39,19 @@ async def visualize_user_embedding_history(user_embeddings: list):
 
   distinct_colors = [
     "#87CEEB",  # Sky Blue
-    "#FF0000",  # Bright Red
-    "#228B22",  # Forest Green
     "#FFA500",  # Orange
     "#800080",  # Purple
-    "#8B0000",  # Dark Red
-    "#4169E1",  # Royal Blue
-    "#90EE90",  # Light Green
-    "#1E90FF",  # Dodger Blue
-    "#32CD32",  # Lime Green
-    "#000080",  # Navy Blue
+    "#FFC107",  # Amber
+    "#000080",  # Navy
+    "#00FF00",  # Green
+    "#808080",  # Grey
+    "#7FFFD4",  # Aquamarine
   ]
 
   # Mapping for colors
   color_index_to_color = {i: color for i, color in enumerate(distinct_colors)}
 
-  source_ids = [x.source_id for x in all_content]
+  source_ids = list(set([x.source_id for x in all_content]))
 
   sources = await db.fetch_all(database.sources.select())
 

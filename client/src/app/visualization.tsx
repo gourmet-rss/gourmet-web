@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { serverFetch } from "@/util/http";
+import { serverGet } from "@/util/http";
 import { userContentItemValidator } from "@/validators";
 import { z } from "zod";
 import { useAuth } from "@clerk/nextjs";
@@ -9,7 +9,7 @@ import { useAuth } from "@clerk/nextjs";
 const k = 5;
 
 const getContent = async (getToken: () => Promise<string | null>) =>
-  await serverFetch(
+  await serverGet(
     "/feed",
     z.object({
       content: z.array(userContentItemValidator),
@@ -54,10 +54,7 @@ export default function Visualization() {
               </div>
             ))}
           </div>
-          <iframe
-            src="http://localhost:8000/visualization"
-            className="w-full h-full"
-          />
+          <iframe src="/api/visualization" className="w-full h-full" />
         </div>
       )}
     </>

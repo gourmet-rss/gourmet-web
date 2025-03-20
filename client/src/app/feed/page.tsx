@@ -1,4 +1,4 @@
-import { HTTPError, serverFetch } from "@/util/http";
+import { HTTPError, serverGet } from "@/util/http";
 import { userContentItemValidator } from "@/validators";
 import { z } from "zod";
 import { auth } from "@clerk/nextjs/server";
@@ -14,7 +14,7 @@ export default async function Feed() {
   }
 
   const fetchData = async () =>
-    await serverFetch(
+    await serverGet(
       "/feed",
       z.object({
         content: z.array(userContentItemValidator),
