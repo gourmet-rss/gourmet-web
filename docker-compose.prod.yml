@@ -6,8 +6,6 @@ services:
       - "9876:5432"
   server:
     image: ghcr.io/${GITHUB_USER}/gourmet-server
-    ports:
-      - "8000:8000"
     environment:
       - CLERK_SECRET_KEY
       - DATABASE_URL=postgresql+asyncpg://postgres:$POSTGRES_PASSWORD@postgres:5432

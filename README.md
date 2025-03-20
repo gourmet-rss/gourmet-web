@@ -28,7 +28,7 @@ The rss feeder that only give you the best content you want.
 
 ### Running the server
 
-cd into the `/server` directory and run `uv run -m src.server` to launch the server
+cd into the `/server` directory and run `uv run --env-file=../.env -m src.server` to launch the server
 
 ### Frontend client
 
@@ -130,3 +130,23 @@ The following secrets must be configured in your GitHub repository:
 - `SSH_PRIVATE_KEY`: SSH private key for accessing your server
 - `SERVER_HOST`: Hostname or IP address of your production server
 - `POSTGRES_PASSWORD`: Your PostgreSQL password
+
+## Connecting to the database
+
+### Locally
+
+Host: 127.0.0.1
+Port: 5433
+User: postgres
+Password: password
+
+### Production
+
+For production, the database is not exposed directly over the network, but can be accessed via ssh tunnel:
+
+SSH Host: <your-production-server-ip>
+SSH User: <your-ssh-user>
+Host: localhost
+Port: 9876
+User: postgres
+Password: $POSTGRES_PASSWORD (as set in the .env)

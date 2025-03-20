@@ -1,13 +1,14 @@
+import deepmerge from "deepmerge";
 import { ZodType } from "zod";
 
 export const SERVER_URL = process.env.SERVER_URL || "http://127.0.0.1:8000";
 
 async function getHeaders(getToken: () => Promise<string | null>) {
-  const headers = new Headers();
+  const headers: Record<string, string> = {};
   if (typeof window === "undefined") {
     const token = await getToken();
     if (token) {
-      headers.set("Authorization", `Bearer ${token}`);
+      headers["Authorization"] = `Bearer ${token}`;
     }
   }
   return headers;
@@ -22,10 +23,10 @@ export class HTTPError extends Error {
   }
 }
 
-export async function serverFetch<T>(
+export async function serverFetch(
   path: string,
-  validator: ZodType<T>,
   getToken: () => Promise<string | null>,
+  options?: RequestInit,
 ) {
   // Use the proxy route handler when on the client side
   const url =
@@ -33,11 +34,23 @@ export async function serverFetch<T>(
       ? `${SERVER_URL}${path}`
       : `/api/proxy${path}`;
 
-  const headers = await getHeaders(getToken);
+  const opts: RequestInit = {
+    headers: await getHeaders(getToken),
+  };
 
-  const response = await fetch(url, {
-    headers,
-  });
+  const finalOpts = deepmerge(opts, options || {});
+
+  const response = await fetch(url, finalOpts);
+
+  return response;
+}
+
+export async function serverGet<T>(
+  path: string,
+  validator: ZodType<T>,
+  getToken: () => Promise<string | null>,
+) {
+  const response = await serverFetch(path, getToken);
 
   if (!response.ok) {
     throw new HTTPError(response);
@@ -52,19 +65,10 @@ export async function serverPost<T>(
   getToken: () => Promise<string | null>,
   validator?: ZodType<T> | null,
 ) {
-  // Use the proxy route handler when on the client side
-  const url =
-    typeof window === "undefined"
-      ? `${SERVER_URL}${path}`
-      : `/api/proxy${path}`;
-
-  const headers = await getHeaders(getToken);
-
-  const response = await fetch(url, {
+  const response = await serverFetch(path, getToken, {
     method: "POST",
     body: JSON.stringify(requestData),
     headers: {
-      ...headers,
       "Content-Type": "application/json",
     },
   });

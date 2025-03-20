@@ -7,7 +7,7 @@ import classNames from "classnames";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { serverFetch, serverPost } from "@/util/http";
+import { serverGet, serverPost } from "@/util/http";
 import { useAuth } from "@clerk/nextjs";
 
 export default function ContentPicker() {
@@ -24,7 +24,7 @@ export default function ContentPicker() {
               existing_content: selectedContentIds.join(","),
             })
           : new URLSearchParams();
-      return serverFetch(
+      return serverGet(
         `/onboarding?${q.toString()}`,
         z.object({
           content: z.array(contentItemValidator),
