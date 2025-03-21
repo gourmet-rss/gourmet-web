@@ -1,4 +1,3 @@
-import random
 import torch
 import uuid
 import numpy as np
@@ -10,7 +9,9 @@ import sqlalchemy
 #
 #
 #
-async def get_recommendation_candidates(user_embedding: list, recommendation_ids: list[int] | None = None):
+async def get_recommendation_candidates(
+  user_id: int, user_embedding: list, recommendation_ids: list[int] | None = None
+):
   """
   Get a list of recommendation candidates for a user
   """
@@ -22,15 +23,16 @@ async def get_recommendation_candidates(user_embedding: list, recommendation_ids
     f"""
         SELECT c.id, c.date, c.embedding <-> :user_embedding AS distance
         FROM content c
-        LEFT JOIN user_content_ratings ucr ON c.id = ucr.content_id AND ucr.user_id = :user_id AND ucr.rating < 0
+        LEFT JOIN user_content_ratings ucr ON c.id = ucr.content_id AND ucr.user_id = :user_id
         WHERE c.date >= CURRENT_DATE - INTERVAL '{constants.MAX_CONTENT_AGE} days'
         AND c.id NOT IN (SELECT UNNEST(cast(:ignored_ids as int[])))
-        AND ucr.id IS NULL
+        AND (ucr.rating IS NULL OR ucr.rating >= 0)
         AND c.embedding <-> :user_embedding < :max_distance
         ORDER BY c.embedding <-> :user_embedding
         LIMIT :limit
     """,
     {
+      "user_id": user_id,
       "user_embedding": util.list_to_string(user_embedding),
       "ignored_ids": recommendation_ids,
       "max_distance": constants.MAX_SEARCH_DISTANCE,
@@ -76,7 +78,7 @@ async def get_recommendations(user_id: int, recommendation_ids: list[int] | None
   db = await database.get_db()
   user = await db.fetch_one(database.users.select().where(database.users.c.id == user_id))
 
-  candidates = await get_recommendation_candidates(user.embedding, recommendation_ids)
+  candidates = await get_recommendation_candidates(user_id, user.embedding, recommendation_ids)
   ranked_candidates = rank_candidates(candidates)
   recommendation_ids = [candidate.id for candidate in ranked_candidates][: constants.NUM_RECOMMENDATIONS]
 
