@@ -9,55 +9,65 @@ import sqlalchemy
 #
 #
 #
-async def get_a_recommendation_id(user_embedding: list, recommendation_ids: list):
+async def get_recommendation_candidates(user_embedding: list, recommendation_ids: list[int] | None = None):
   """
-  Get a single recommendation id for a user
+  Get a list of recommendation candidates for a user
   """
 
   db = await database.get_db()
 
-  # Create a small adjustment to the user embedding and use it to find a new recommendation
-  random_delta = (2 * torch.rand(constants.EMBED_DIM) - 1) * constants.MAX_SEARCH_DISTANCE
-  new_embedding = torch.tensor(user_embedding) + random_delta
-
-  if len(recommendation_ids) == 0:
-    # Add recommendation id to avoid syntax error if list empty
-    recommendation_ids = [0]
-
-  # Find the closest content to the new embedding
-  results = await db.fetch_all(
+  # Find all content ids near the user embedding
+  candidates = await db.fetch_all(
     f"""
-        SELECT id, date, embedding <-> :user_embedding AS distance
-        FROM content
-        WHERE date >= CURRENT_DATE - INTERVAL '{constants.MAX_CONTENT_AGE} days'
-        AND id NOT IN (SELECT UNNEST(cast(:ignored_ids as int[])))
-        ORDER BY embedding <-> :user_embedding
+        SELECT c.id, c.date, c.embedding <-> :user_embedding AS distance
+        FROM content c
+        LEFT JOIN user_content_ratings ucr ON c.id = ucr.content_id AND ucr.user_id = :user_id AND ucr.rating < 0
+        WHERE c.date >= CURRENT_DATE - INTERVAL '{constants.MAX_CONTENT_AGE} days'
+        AND c.id NOT IN (SELECT UNNEST(cast(:ignored_ids as int[])))
+        AND ucr.id IS NULL
+        AND c.embedding <-> :user_embedding < :max_distance
+        ORDER BY c.embedding <-> :user_embedding
         LIMIT :limit
     """,
-    {"user_embedding": util.list_to_string(new_embedding.tolist()), "limit": 50, "ignored_ids": recommendation_ids},
+    {
+      "user_embedding": util.list_to_string(user_embedding),
+      "ignored_ids": recommendation_ids,
+      "max_distance": constants.MAX_SEARCH_DISTANCE,
+      "limit": 100,
+    },
   )
 
-  current_date = datetime.now()
+  current_date = datetime.now().timestamp()
 
   # Adjust the distance by applying the age penalty
-  chosen_result_id = None
-  min_distance = float("inf")
-  for result in results:
-    age_in_seconds = current_date.timestamp() - result.date.timestamp()
+  for candidate in candidates:
+    age_in_seconds = current_date - candidate.date.timestamp()
     age_in_hours = age_in_seconds / 3600
-    adjusted_distance = result.distance + (age_in_hours * constants.AGE_PENALTY_FACTOR)
+    candidate.distance += age_in_hours * constants.AGE_PENALTY_FACTOR
 
-    if adjusted_distance < min_distance:
-      min_distance = adjusted_distance
-      chosen_result_id = result.id
+  # Sort the candidates by distance
+  candidates.sort(key=lambda x: x.distance)
 
-  if not chosen_result_id:
+  if not candidates:
     raise Exception("No content found")
 
-  return chosen_result_id
+  return candidates
 
 
-async def get_recommendations(user_id: int):
+def rank_candidates(candidates: list):
+  """
+  Rank the candidates based on their distance and a random factor
+  """
+
+  for idx, candidate in enumerate(candidates):
+    candidate.rating = len(candidates) / ((idx + 1) * np.random.random())
+
+  candidates.sort(key=lambda x: x.rating)
+
+  return candidates
+
+
+async def get_recommendations(user_id: int, recommendation_ids: list[int] | None = None):
   """
   Get recommendations for user
   """
@@ -65,11 +75,9 @@ async def get_recommendations(user_id: int):
   db = await database.get_db()
   user = await db.fetch_one(database.users.select().where(database.users.c.id == user_id))
 
-  recommendation_ids: list[int] = []
-
-  for idx in range(constants.NUM_RECOMMENDATIONS):
-    recommendation_id = await get_a_recommendation_id(user.embedding, recommendation_ids)
-    recommendation_ids.append(recommendation_id)
+  candidates = await get_recommendation_candidates(user.embedding, recommendation_ids)
+  ranked_candidates = rank_candidates(candidates)
+  recommendation_ids = [candidate.id for candidate in ranked_candidates][: constants.NUM_RECOMMENDATIONS]
 
   # Join content with user_content_ratings to get user ratings
   content = await db.fetch_all(
