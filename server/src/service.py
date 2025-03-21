@@ -102,6 +102,31 @@ async def get_recommendations(user_id: int, recommendation_ids: list[int] | None
   return content
 
 
+async def get_closest_content(user_id: int):
+  db = await database.get_db()
+  user = await db.fetch_one(database.users.select().where(database.users.c.id == user_id))
+
+  user_embedding = torch.tensor(user.embedding)
+
+  # Join content with user_content_ratings to get user ratings
+  content = await db.fetch_all(
+    """
+    SELECT
+      c.id, c.content_type, c.title, c.url, c.description, c.source_id, c.date, c.media,
+      s.url as source_url,
+      COALESCE(ucr.rating, 0) as rating
+    FROM content c
+    LEFT JOIN user_content_ratings ucr ON c.id = ucr.content_id AND ucr.user_id = :user_id
+    LEFT JOIN sources s ON c.source_id = s.id
+    ORDER BY :user_embedding <-> c.embedding ASC
+    LIMIT 5
+    """,
+    {"user_id": user_id, "user_embedding": util.list_to_string(user_embedding.tolist())},
+  )
+
+  return content
+
+
 #
 #
 #

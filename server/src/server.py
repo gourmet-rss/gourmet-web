@@ -90,6 +90,27 @@ async def get_feed(request: Request, recommendation_ids: str = "") -> Dict[str, 
   return {"content": validated_content}
 
 
+@app.get("/closest")
+async def get_closest_content(request: Request) -> Dict[str, list]:
+  user = await auth.authenticate(request)
+  content = await service.get_closest_content(user.id)
+
+  # Parse content items and ensure media is properly formatted
+  validated_content = []
+  for content_item in content:
+    content_item_dict = dict(content_item)
+
+    if "media" in content_item_dict:
+      try:
+        content_item_dict["media"] = json.loads(content_item_dict["media"])
+      except json.JSONDecodeError:
+        content_item_dict["media"] = []
+
+    validated_content.append(validators.UserContentItem(**content_item_dict))
+
+  return {"content": validated_content}
+
+
 @app.get("/health")
 async def health_check() -> Dict[str, str]:
   """
