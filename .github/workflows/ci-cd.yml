@@ -4,8 +4,6 @@ on:
   push:
     branches:
       - main
-      - cameron
-      - azizi
   workflow_dispatch:
 
 jobs:

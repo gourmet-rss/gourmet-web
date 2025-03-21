@@ -1,3 +1,4 @@
+import random
 import torch
 import uuid
 import numpy as np
@@ -182,36 +183,73 @@ async def sign_up():
 #
 #
 #
-async def get_onboarding_content(existing_selected_content_ids: list):
+async def get_onboarding_content(existing_selected_content_ids: list, existing_unselected_content_ids: list):
   db = await database.get_db()
 
-  sample_count = constants.SAMPLE_COUNT - len(existing_selected_content_ids)
+  existing_selected_content = await db.fetch_all(
+    database.content.select().where(database.content.c.id.in_(existing_selected_content_ids))
+  )
 
-  # Get a random sample of content ids
+  existing_unselected_content = await db.fetch_all(
+    database.content.select().where(database.content.c.id.in_(existing_unselected_content_ids))
+  )
+
+  def is_far_enough(content):
+    for selected_content_item in existing_selected_content:
+      similarity = torch.cosine_similarity(
+        torch.tensor(content.embedding), torch.tensor(selected_content_item.embedding), dim=0
+      )
+      if similarity.item() > constants.MAX_COSINE_SIMILARITY_ONBOARDING:
+        return False
+    return True
+
+  # Converts cosine similarity to L2 distance
+  min_l2_distance = util.cosine_to_l2(constants.MAX_COSINE_SIMILARITY_ONBOARDING)
+
+  print("Min L2 distance: ", min_l2_distance)
+
+  existing_unselected_content = [x for x in existing_unselected_content if is_far_enough(x)]
+
+  sample_count = constants.SAMPLE_COUNT - len(existing_selected_content_ids) - len(existing_unselected_content)
+
+  if sample_count <= 0:
+    return existing_selected_content + existing_unselected_content
+
+  # Get a random sample of content ids that are at least min_l2_distance away from existing content
   sample_content_ids = await db.fetch_all(
     """
-        SELECT id AS id
-        FROM content
-        WHERE embedding IS NOT NULL
-        AND id NOT IN (SELECT UNNEST(cast(:existing_ids as int[])))
+        WITH existing_embeddings AS (
+            SELECT embedding
+            FROM content
+            WHERE id IN (SELECT UNNEST(cast(:existing_ids as int[])))
+        )
+        SELECT c.id AS id
+        FROM content c
+        WHERE c.embedding IS NOT NULL
+        AND c.id NOT IN (SELECT UNNEST(cast(:existing_ids as int[])))
+        AND NOT EXISTS (
+            SELECT 1
+            FROM existing_embeddings e
+            WHERE c.embedding <-> e.embedding < :min_l2_distance
+        )
         ORDER BY RANDOM()
         LIMIT :sample_count
     """,
-    {"existing_ids": existing_selected_content_ids, "sample_count": sample_count},
+    {
+      "existing_ids": existing_selected_content_ids + existing_unselected_content_ids,
+      "sample_count": sample_count,
+      "min_l2_distance": min_l2_distance,
+    },
   )
 
   if len(sample_content_ids) == 0:
     raise Exception("No content found")
 
-  existing_content = await db.fetch_all(
-    database.content.select().where(database.content.c.id.in_(existing_selected_content_ids))
-  )
-
   sample_content = await db.fetch_all(
     database.content.select().where(database.content.c.id.in_([x.id for x in sample_content_ids]))
   )
 
-  return existing_content + sample_content
+  return existing_selected_content + existing_unselected_content + sample_content
 
 
 #

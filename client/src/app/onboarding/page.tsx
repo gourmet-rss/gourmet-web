@@ -10,28 +10,57 @@ import Link from "next/link";
 import { serverGet, serverPost } from "@/util/http";
 import { useAuth } from "@clerk/nextjs";
 import { ArrowLeft, Check } from "lucide-react";
+import { motion } from "framer-motion";
+
+const MIN_ITEMS = 3;
 
 export default function ContentPicker() {
   const [selectedContentIds, setSelectedContentIds] = useState<number[]>([]);
 
   const { getToken } = useAuth();
 
-  const { data } = useQuery({
+  const [newContentIds, setNewContentIds] = useState<number[]>([]);
+
+  const { data: content } = useQuery({
     queryKey: ["onboarding", selectedContentIds],
-    queryFn: async () => {
+    placeholderData: (prev) => prev,
+    queryFn: async (): Promise<z.infer<typeof contentItemValidator>[]> => {
       const q =
         selectedContentIds.length > 0
           ? new URLSearchParams({
-              existing_content: selectedContentIds.join(","),
+              selected_content: selectedContentIds.join(","),
+              unselected_content: content
+                ? content
+                    .map((c) => c.id)
+                    .filter((id) => !selectedContentIds.includes(id))
+                    .join(",")
+                : "",
             })
           : new URLSearchParams();
-      return serverGet(
+      const newData = await serverGet(
         `/onboarding?${q.toString()}`,
         z.object({
           content: z.array(contentItemValidator),
         }),
         getToken,
       );
+      if (!content) {
+        return newData.content;
+      }
+      const newContentIds: number[] = [];
+      const ret = content.map((existingItem) => {
+        const match = newData.content.find(
+          (item) => item.id === existingItem.id,
+        );
+        if (match) {
+          return match;
+        }
+        const item = newData.content.pop()!;
+        newContentIds.push(item.id);
+        return item;
+      });
+      setNewContentIds(newContentIds);
+      return ret;
     },
   });
 
@@ -77,8 +106,8 @@ export default function ContentPicker() {
           Personalize your feed
         </h1>
         <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl">
-          Pick 3 or more topics that interest you, and we&apos;ll curate content
-          tailored to your preferences.
+          Pick 3 or more articles that interest you, and we&apos;ll curate
+          content tailored to your preferences.
         </p>
         {selectedContentIds.length > 0 && (
           <div className="mt-3 text-sm font-medium">
@@ -91,8 +120,8 @@ export default function ContentPicker() {
 
       <div className="mb-10">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {data
-            ? data.content.map((contentItem) => {
+          {content
+            ? content.map((contentItem) => {
                 const isSelected = selectedContentIds.includes(contentItem.id);
                 return (
                   <button
@@ -108,13 +137,27 @@ export default function ContentPicker() {
                     }
                     className="text-left w-full"
                   >
-                    <div
+                    <motion.div
                       className={classNames(
                         "h-full p-5 rounded-lg transition-all duration-200 flex flex-col justify-between",
                         isSelected
                           ? "bg-indigo-50 dark:bg-indigo-900/30 border-2 border-indigo-500 shadow-md"
                           : "bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-sm",
                       )}
+                      initial={
+                        newContentIds.includes(contentItem.id)
+                          ? { scale: 0.8, opacity: 0 }
+                          : false
+                      }
+                      animate={{ scale: 1, opacity: 1 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 300,
+                        damping: 20,
+                        delay: newContentIds.includes(contentItem.id)
+                          ? 0.1 * newContentIds.indexOf(contentItem.id)
+                          : 0,
+                      }}
                     >
                       <div className="flex-grow">
                         <h3 className="font-medium text-gray-900 dark:text-white mb-2 line-clamp-2">
@@ -131,7 +174,7 @@ export default function ContentPicker() {
                           </span>
                         </div>
                       )}
-                    </div>
+                    </motion.div>
                   </button>
                 );
               })
@@ -146,17 +189,19 @@ export default function ContentPicker() {
       <div className="flex justify-center">
         <div
           className={classNames({
-            tooltip: selectedContentIds.length < 3,
+            tooltip: selectedContentIds.length < MIN_ITEMS,
           })}
-          data-tip="Select at least 3 topics to continue"
+          data-tip={`Select at least ${MIN_ITEMS} items to continue`}
         >
           <button
             className={classNames(
               "btn btn-lg px-8",
-              selectedContentIds.length >= 3 ? "btn-primary" : "btn-disabled",
+              selectedContentIds.length >= MIN_ITEMS
+                ? "btn-primary"
+                : "btn-disabled",
             )}
             onClick={() => mutate()}
-            disabled={selectedContentIds.length < 3}
+            disabled={selectedContentIds.length < MIN_ITEMS}
           >
             {isSubmitting && (
               <span className="loading loading-spinner mr-2"></span>

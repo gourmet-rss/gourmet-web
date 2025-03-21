@@ -1,3 +1,4 @@
+from time import sleep
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
@@ -46,10 +47,11 @@ app.add_middleware(
 
 
 @app.get("/onboarding")
-async def get_onboarding(request: Request, existing_content: str = "") -> Dict[str, list]:
+async def get_onboarding(request: Request, selected_content: str = "", unselected_content: str = "") -> Dict[str, list]:
   await auth.authenticate(request)
-  existing_content_ids = [int(x) for x in existing_content.split(",")] if existing_content else []
-  sample_content = await service.get_onboarding_content(existing_content_ids)
+  existing_selected_ids = [int(x) for x in selected_content.split(",")] if selected_content else []
+  existing_unselected_ids = [int(x) for x in unselected_content.split(",")] if unselected_content else []
+  sample_content = await service.get_onboarding_content(existing_selected_ids, existing_unselected_ids)
   return {"content": [validators.ContentItem(**x) for x in sample_content]}
 
 
@@ -64,11 +66,13 @@ async def onboard(request: Request, data: Dict[str, Any]) -> Dict[str, str]:
 
 
 @app.get("/feed")
-async def get_feed(request: Request) -> Dict[str, list]:
+async def get_feed(request: Request, recommendation_ids: str = "") -> Dict[str, list]:
   user = await auth.authenticate(request)
   if user.embedding is None:
     raise HTTPException(status_code=409, detail="User has not completed onboarding")
-  content = await service.get_recommendations(user.id)
+  content = await service.get_recommendations(
+    user.id, [int(x) for x in recommendation_ids.split(",")] if recommendation_ids else None
+  )
 
   # Parse content items and ensure media is properly formatted
   validated_content = []
