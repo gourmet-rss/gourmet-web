@@ -51,8 +51,7 @@ async def get_onboarding(request: Request, selected_content: str = "", unselecte
   await auth.authenticate(request)
   existing_selected_ids = [int(x) for x in selected_content.split(",")] if selected_content else []
   existing_unselected_ids = [int(x) for x in unselected_content.split(",")] if unselected_content else []
-  user = await auth.authenticate(request)
-  sample_content = await service.get_onboarding_content(user.id, existing_selected_ids, existing_unselected_ids)
+  sample_content = await service.get_onboarding_content(existing_selected_ids, existing_unselected_ids)
   return {"content": [validators.ContentItem(**x) for x in sample_content]}
 
 
