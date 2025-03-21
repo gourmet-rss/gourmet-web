@@ -32,7 +32,11 @@ export default function Feed() {
         getToken,
       );
 
-      setLoadingPages((prev) => prev - 1);
+      if (res.content.length === 0) {
+        setLoadingPages(0);
+      } else {
+        setLoadingPages((prev) => prev - 1);
+      }
       return [...(content ?? []), ...res.content];
     },
   });

@@ -38,6 +38,9 @@ async def get_recommendation_candidates(user_embedding: list, recommendation_ids
     },
   )
 
+  if not candidates:
+    return []
+
   current_date = datetime.now().timestamp()
 
   # Adjust the distance by applying the age penalty
@@ -48,9 +51,6 @@ async def get_recommendation_candidates(user_embedding: list, recommendation_ids
 
   # Sort the candidates by distance
   candidates.sort(key=lambda x: x.distance)
-
-  if not candidates:
-    raise Exception("No content found")
 
   return candidates
 
