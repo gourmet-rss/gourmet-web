@@ -6,3 +6,5 @@ NUM_RECOMMENDATIONS = 12  # Number of recommendations to show
 SAMPLE_COUNT = 12  # Number of content ids to sample
 MAX_1D_SEARCH_DISTANCE = 0.1  # Maximum new embedding distance from the user embedding for search
 MAX_SEARCH_DISTANCE = MAX_1D_SEARCH_DISTANCE * EMBED_DIM**0.5
+MIN_1D_ONBOARDING_SEPARATION = 0.2  # Minimum separation between onboarding suggestions
+MIN_ONBOARDING_SEPARATION = MIN_1D_ONBOARDING_SEPARATION * EMBED_DIM**0.5
