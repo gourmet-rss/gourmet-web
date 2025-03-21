@@ -1,8 +1,16 @@
+import { auth } from "@clerk/nextjs/server";
+import { redirect } from "next/navigation";
+
 export default async function FeedLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const { sessionId } = await auth();
+
+  if (!sessionId) {
+    return redirect("/");
+  }
   return (
     <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
       <div className="mb-8 border-b border-gray-200 dark:border-gray-800 pb-4 w-full px-4">
