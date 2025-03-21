@@ -25,12 +25,13 @@ export default function Feed() {
     queryFn: async (): Promise<z.infer<typeof userContentItemValidator>[]> => {
       setLoadingPages((prev) => prev + 1);
       const res = await serverGet(
-        "/feed",
+        `/feed?recommendation_ids=${(content ?? []).map((x) => x.id).join(",")}`,
         z.object({
           content: z.array(userContentItemValidator),
         }),
         getToken,
       );
+
       setLoadingPages((prev) => prev - 1);
       return [...(content ?? []), ...res.content];
     },

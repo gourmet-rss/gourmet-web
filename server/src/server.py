@@ -66,11 +66,13 @@ async def onboard(request: Request, data: Dict[str, Any]) -> Dict[str, str]:
 
 
 @app.get("/feed")
-async def get_feed(request: Request) -> Dict[str, list]:
+async def get_feed(request: Request, recommendation_ids: str = "") -> Dict[str, list]:
   user = await auth.authenticate(request)
   if user.embedding is None:
     raise HTTPException(status_code=409, detail="User has not completed onboarding")
-  content = await service.get_recommendations(user.id)
+  content = await service.get_recommendations(
+    user.id, [int(x) for x in recommendation_ids.split(",")] if recommendation_ids else None
+  )
 
   # Parse content items and ensure media is properly formatted
   validated_content = []
