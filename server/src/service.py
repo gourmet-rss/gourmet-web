@@ -18,6 +18,8 @@ async def get_recommendation_candidates(
 
   db = await database.get_db()
 
+  max_distance = util.cosine_to_l2_distance(constants.MIN_SEARCH_COSINE_SIMILARITY)
+
   # Find all content ids near the user embedding
   candidates = await db.fetch_all(
     f"""
@@ -35,7 +37,7 @@ async def get_recommendation_candidates(
       "user_id": user_id,
       "user_embedding": util.list_to_string(user_embedding),
       "ignored_ids": recommendation_ids,
-      "max_distance": constants.MAX_SEARCH_DISTANCE,
+      "max_distance": max_distance,
       "limit": 100,
     },
   )
@@ -201,12 +203,12 @@ async def get_onboarding_content(existing_selected_content_ids: list, existing_u
       similarity = torch.cosine_similarity(
         torch.tensor(content.embedding), torch.tensor(selected_content_item.embedding), dim=0
       )
-      if similarity.item() > constants.MAX_COSINE_SIMILARITY_ONBOARDING:
+      if similarity.item() > constants.MAX_ONBOARDING_COSINE_SIMILARITY:
         return False
     return True
 
   # Converts cosine similarity to L2 distance
-  min_l2_distance = util.cosine_to_l2(constants.MAX_COSINE_SIMILARITY_ONBOARDING)
+  min_l2_distance = util.cosine_to_l2_distance(constants.MAX_ONBOARDING_COSINE_SIMILARITY)
 
   print("Min L2 distance: ", min_l2_distance)
 
