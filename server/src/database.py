@@ -80,6 +80,7 @@ ingestion_jobs = sqlalchemy.Table(
   "ingestion_jobs",
   metadata,
   sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True),
+  sqlalchemy.Column("source_id", sqlalchemy.Integer, sqlalchemy.ForeignKey("sources.id")),
   sqlalchemy.Column("start_time", sqlalchemy.DateTime(timezone=True)),
   sqlalchemy.Column("end_time", sqlalchemy.DateTime(timezone=True)),
   sqlalchemy.Column("status", sqlalchemy.String),  # 'running', 'completed', 'failed'

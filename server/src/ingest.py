@@ -88,28 +88,35 @@ async def process_feed_item(source_id: int, feed_item: feedparser.FeedParserDict
     return False
 
 
-async def get_last_ingestion_date():
-  """Get the start time of the last successful ingestion job"""
+async def get_last_ingestion_date(source_id: int):
+  """Get the start time of the last successful ingestion job for a specific source"""
   db = await database.get_db()
   result = await db.fetch_one(
     """SELECT start_time
        FROM ingestion_jobs
-       WHERE status = 'completed'
+       WHERE status = 'completed' AND source_id = :source_id
        ORDER BY start_time DESC
-       LIMIT 1"""
+       LIMIT 1""",
+    {"source_id": source_id},
   )
   return result["start_time"] if result else None
 
 
-async def create_ingestion_job():
+async def create_ingestion_job(source_id: int):
   """Create a new ingestion job and return its ID"""
   db = await database.get_db()
   result = await db.fetch_one(
     """INSERT INTO ingestion_jobs
-       (start_time, status, items_processed, items_added)
-       VALUES (:start_time, :status, :items_processed, :items_added)
+       (source_id, start_time, status, items_processed, items_added)
+       VALUES (:source_id, :start_time, :status, :items_processed, :items_added)
        RETURNING id""",
-    {"start_time": datetime.datetime.now(), "status": "running", "items_processed": 0, "items_added": 0},
+    {
+      "source_id": source_id,
+      "start_time": datetime.datetime.now(),
+      "status": "running",
+      "items_processed": 0,
+      "items_added": 0,
+    },
   )
   return result["id"]
 
@@ -157,25 +164,26 @@ async def feed_ingestion(feed_id: int, feed_url: str, job_id: int, last_ingestio
 
 async def main():
   try:
-    job_id = await create_ingestion_job()
-    print(f"Starting ingestion job {job_id}")
-    last_ingestion_date = await get_last_ingestion_date()
-    if last_ingestion_date:
-      print(f"Only processing items newer than {last_ingestion_date}")
+    print("Starting ingestion pipeline")
     db = await database.get_db()
     sources = await db.fetch_all(database.sources.select())
     total_processed = 0
     for source in sources:
       try:
+        job_id = await create_ingestion_job(source.id)
+        print(f"Starting ingestion job {job_id} for source {source.url}")
+        last_ingestion_date = await get_last_ingestion_date(source.id)
+        if last_ingestion_date:
+          print(f"Only processing items newer than {last_ingestion_date}")
         processed = await feed_ingestion(source.id, source.url, job_id, last_ingestion_date)
         total_processed += processed
+        await complete_ingestion_job(job_id, success=True)
       except Exception as e:
         print(f"Error processing source {source.url}: {e}")
-    await complete_ingestion_job(job_id)
+        await complete_ingestion_job(job_id, success=False, error_message=str(e))
     print(f"Completed ingestion job {job_id}. Processed {total_processed} items.")
   except Exception as e:
     print(f"Error in ingestion pipeline: {e}")
-    await complete_ingestion_job(job_id, success=False, error_message=str(e))
   finally:
     await database.close_db()
 
