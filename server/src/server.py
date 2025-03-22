@@ -70,7 +70,7 @@ async def get_feed(request: Request, flavour_id: int | None = None, recommendati
   if user.embedding is None:
     raise HTTPException(status_code=409, detail="User has not completed onboarding")
   content = await service.get_recommendations(
-    user.id, [int(x) for x in recommendation_ids.split(",")] if recommendation_ids else None
+    user.id, flavour_id, [int(x) for x in recommendation_ids.split(",")] if recommendation_ids else None
   )
 
   # Parse content items and ensure media is properly formatted

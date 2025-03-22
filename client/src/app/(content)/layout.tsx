@@ -1,8 +1,10 @@
-import Sidebar from "@/components/Sidebar";
 import { serverGet } from "@/util/http";
 import { z } from "zod";
 import { auth } from "@clerk/nextjs/server";
 import { flavourValidator } from "@/validators";
+import ContentLayoutClient from "@/app/(content)/ContentLayoutClient";
+import Header from "@/components/Header";
+import Visualization from "../visualization";
 
 export default async function ContentLayout({
   children,
@@ -18,9 +20,10 @@ export default async function ContentLayout({
   );
 
   return (
-    <div className="flex relative">
-      <Sidebar flavours={flavours} />
-      <main className="flex-1 max-w-6xl mx-auto">{children}</main>
-    </div>
+    <>
+      <Visualization />
+      <Header hasSidebar />
+      <ContentLayoutClient flavours={flavours}>{children}</ContentLayoutClient>
+    </>
   );
 }

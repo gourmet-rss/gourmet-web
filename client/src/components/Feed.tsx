@@ -11,7 +11,7 @@ import classNames from "classnames";
 import { useEffect, useRef, useState } from "react";
 import MoreLikeThisButton from "./MoreLikeThisButton";
 
-const feedGridClass = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6";
+const feedGridClass = "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6";
 
 export default function Feed({ flavourId }: { flavourId?: number }) {
   const { getToken } = useAuth();
@@ -30,6 +30,7 @@ export default function Feed({ flavourId }: { flavourId?: number }) {
     refetch,
   } = useQuery({
     queryKey: ["feed", flavourId],
+    refetchOnMount: "always",
     queryFn: async (): Promise<z.infer<typeof userContentItemValidator>[]> => {
       setLoadingPages((prev) => prev + 1);
       const queryParams = new URLSearchParams();
@@ -67,6 +68,16 @@ export default function Feed({ flavourId }: { flavourId?: number }) {
     return (
       <div className={classNames(feedGridClass, "w-full")}>
         <LoadingTiles />
+      </div>
+    );
+  }
+
+  if (content.length === 0) {
+    return (
+      <div className="w-full">
+        <p className="text-gray-500 dark:text-gray-400 text-center text-lg">
+          No content found
+        </p>
       </div>
     );
   }

@@ -77,7 +77,7 @@ def rank_candidates(candidates: list):
   return candidates
 
 
-async def get_recommendations(user_id: int, recommendation_ids: list[int] | None = None):
+async def get_recommendations(user_id: int, flavour_id: int | None = None, recommendation_ids: list[int] | None = None):
   """
   Get recommendations for user
   """
@@ -85,7 +85,13 @@ async def get_recommendations(user_id: int, recommendation_ids: list[int] | None
   db = await database.get_db()
   user = await db.fetch_one(database.users.select().where(database.users.c.id == user_id))
 
-  candidates = await get_recommendation_candidates(user_id, user.embedding, recommendation_ids)
+  if flavour_id:
+    flavour = await db.fetch_one(database.user_flavours.select().where(database.user_flavours.c.id == flavour_id))
+    reference_embedding = flavour.embedding
+  else:
+    reference_embedding = user.embedding
+
+  candidates = await get_recommendation_candidates(user_id, reference_embedding, recommendation_ids)
   ranked_candidates = rank_candidates(candidates)
   recommendation_ids = [candidate.id for candidate in ranked_candidates][: constants.NUM_RECOMMENDATIONS]
 
