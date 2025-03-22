@@ -352,7 +352,11 @@ async def create_flavour(user_id: int, content_id: int):
   if not content_item:
     return []
 
-  prompt = f"Describe a short topic title for a feed of articles based on the following headline: {content_item.title}. Return only the topic title, no additional text."  # noqa: E501
+  prompt = f"""
+  Describe a short topic title for a feed of articles based on the following headline: {content_item.title}.
+  The title should not be specific to the exact story but rather relate to the subject of the headline or the topic.
+  Return only the topic title, no additional text.
+  """
 
   response = client.chat.completions.create(
     model=os.getenv("LLM_MODEL"),

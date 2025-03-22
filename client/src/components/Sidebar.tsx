@@ -84,7 +84,7 @@ const Sidebar = ({
         <div className="sticky top-16">
           <div className="p-4 border-b border-gray-200 dark:border-gray-800">
             <h2 className="text-lg font-medium text-gray-900 dark:text-white">
-              My Flavours
+              My Flavours ✨
             </h2>
           </div>
           <div>
