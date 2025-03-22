@@ -13,12 +13,33 @@
     "https://www.engadget.com/rss.xml", // Engadget
     "https://www.mashable.com/rss" // Mashable
   ],
+  "Science": [
+    "https://www.nature.com/articles/s41586-024-06972-2.rss", // Nature
+    "https://www.sciencemag.org/rss/current.xml", // Science
+    "https://www.cell.com/rss/latestarticles.xml", // Cell
+    "https://www.pnas.org/rss/latestarticles.xml", // PNAS
+    "https://www.newscientist.com/feed/home/?cmpid=RSS" // New Scientist
+  ],
   "Business": [
     "https://feeds.bloomberg.com/business/news.rss", // Bloomberg
     "https://www.reuters.com/rss/businessNews", // Reuters Business
     "https://www.cnbc.com/id/100727362/device/rss/rss.xml", // CNBC
     "https://www.forbes.com/real-time/feed/", // Forbes
     "https://www.wsj.com/xml/rss/3_7031.xml" // Wall Street Journal (front page)
+  ],
+  "Software": [
+    "https://stackoverflow.blog/feed/", // Stack Overflow Blog
+    "https://martinfowler.com/feed.atom", // Martin Fowler
+    "https://www.infoq.com/feed/", // InfoQ
+    "https://blog.jetbrains.com/feed/", // JetBrains Blog
+    "https://devblogs.microsoft.com/feed/" // Microsoft Developer Blogs
+  ],
+  "Developer": [
+    "https://dev.to/feed", // DEV Community
+    "https://news.ycombinator.com/rss", // Hacker News
+    "https://css-tricks.com/feed/", // CSS-Tricks
+    "https://www.freecodecamp.org/news/rss/", // freeCodeCamp
+    "https://github.blog/feed/" // GitHub Blog
   ],
   "Entertainment": [
     "https://www.tmz.com/rss/", // TMZ

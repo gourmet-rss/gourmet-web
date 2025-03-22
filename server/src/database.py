@@ -109,17 +109,17 @@ async def seed() -> None:
 
   for category, urls in data.items():
     if urls:
-      first_url = urls[0]
-      try:
-        # Use ON CONFLICT to avoid duplicates (since url is PRIMARY KEY)
-        insert_query = """
-                INSERT INTO sources (url, source_type)
-                VALUES (:url, :source_type)
-                ON CONFLICT (url) DO NOTHING;
-                """
-        await db.execute(query=insert_query, values={"url": first_url, "source_type": "rss"})
-      except Exception as e:
-        print(f"Error inserting {first_url}: {e}")
+      for url in urls:
+        try:
+          # Use ON CONFLICT to avoid duplicates (since url is PRIMARY KEY)
+          insert_query = """
+                  INSERT INTO sources (url, source_type)
+                  VALUES (:url, :source_type)
+                  ON CONFLICT (url) DO NOTHING;
+                  """
+          await db.execute(query=insert_query, values={"url": url, "source_type": "rss"})
+        except Exception as e:
+          print(f"Error inserting {url}: {e}")
 
 
 if __name__ == "__main__":
