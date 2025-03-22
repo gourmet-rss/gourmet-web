@@ -73,8 +73,15 @@
         GITHUB_USER={{ lookup('env', 'GITHUB_USER') }} docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
 
     - name: Restart Docker Compose
+      environment:
+        GITHUB_USER: "{{ lookup('env', 'GITHUB_USER') }}"
+        CLERK_SECRET_KEY: "{{ lookup('env', 'CLERK_SECRET_KEY') }}"
+        POSTGRES_PASSWORD: "{{ lookup('env', 'POSTGRES_PASSWORD') }}"
+        LLM_BASE_URL: "{{ lookup('env', 'LLM_BASE_URL') }}"
+        LLM_MODEL: "{{ lookup('env', 'LLM_MODEL') }}"
+        LLM_API_KEY: "{{ lookup('env', 'LLM_API_KEY') }}"
       shell: |
         set -e
         cd /home/cnimmo/gourmet
-        GITHUB_USER={{ lookup('env', 'GITHUB_USER') }} CLERK_SECRET_KEY={{ lookup('env', 'CLERK_SECRET_KEY') }} POSTGRES_PASSWORD="{{ lookup('env', 'POSTGRES_PASSWORD') }}" docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --remove-orphans
+        docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --remove-orphans
         docker image prune -f

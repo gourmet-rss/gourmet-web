@@ -72,12 +72,12 @@ jobs:
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.SERVER_HOST }} >> ~/.ssh/known_hosts
+          ssh-keyscan -H ${{ vars.SERVER_HOST }} >> ~/.ssh/known_hosts
 
       - name: Create inventory file
         run: |
           echo "[servers]" > inventory.ini
-          echo "${{ secrets.SERVER_HOST }}" >> inventory.ini
+          echo "${{ vars.SERVER_HOST }}" >> inventory.ini
 
       - name: Deploy with Ansible
         env:
@@ -85,5 +85,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
           POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          LLM_BASE_URL: ${{ vars.LLM_BASE_URL }}
+          LLM_MODEL: ${{ vars.LLM_MODEL }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
         run: |
           ansible-playbook -i inventory.ini playbook.yml
