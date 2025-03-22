@@ -1,4 +1,3 @@
-from time import sleep
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
@@ -66,7 +65,7 @@ async def onboard(request: Request, data: Dict[str, Any]) -> Dict[str, str]:
 
 
 @app.get("/feed")
-async def get_feed(request: Request, recommendation_ids: str = "") -> Dict[str, list]:
+async def get_feed(request: Request, flavour_id: int | None = None, recommendation_ids: str = "") -> Dict[str, list]:
   user = await auth.authenticate(request)
   if user.embedding is None:
     raise HTTPException(status_code=409, detail="User has not completed onboarding")
@@ -133,6 +132,39 @@ async def get_visualization(request: Request) -> str:
 async def feedback(request: Request, data: validators.Feedback) -> Dict[str, str]:
   user = await auth.authenticate(request)
   await service.handle_feedback(user.id, data.content_id, data.rating)
+  return {"status": "success"}
+
+
+@app.get("/flavours")
+async def get_flavours(request: Request) -> Dict[str, list]:
+  await auth.authenticate(request)
+  flavours = await service.get_flavours()
+  return {"flavours": [validators.Flavour(**flavour) for flavour in flavours]}
+
+
+@app.get("/flavours/{flavour_id}")
+async def get_flavour(request: Request, flavour_id: int) -> Dict[str, validators.Flavour]:
+  await auth.authenticate(request)
+  flavour = await service.get_flavour(flavour_id)
+  if not flavour:
+    raise HTTPException(status_code=404, detail="Flavour not found")
+  return {"flavour": validators.Flavour(**flavour)}
+
+
+@app.post("/flavours")
+async def create_flavour(request: Request, data: validators.CreateFlavour) -> Dict[str, int]:
+  user = await auth.authenticate(request)
+  if user.embedding is None:
+    raise HTTPException(status_code=409, detail="User has not completed onboarding")
+  flavour_id = await service.create_flavour(user.id, data.content_id)
+
+  return {"id": flavour_id}
+
+
+@app.delete("/flavours/{flavour_id}")
+async def delete_flavour(request: Request, flavour_id: int) -> Dict[str, str]:
+  await auth.authenticate(request)
+  await service.delete_flavour(flavour_id)
   return {"status": "success"}
 
 

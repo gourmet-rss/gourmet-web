@@ -88,6 +88,17 @@ ingestion_jobs = sqlalchemy.Table(
   sqlalchemy.Column("error_message", sqlalchemy.String, nullable=True),
 )
 
+# flavours are separate sessions the user can access which have a different embedding
+user_flavours = sqlalchemy.Table(
+  "user_flavours",
+  metadata,
+  sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True),
+  sqlalchemy.Column("nickname", sqlalchemy.String, nullable=True),
+  sqlalchemy.Column("user_id", sqlalchemy.String, sqlalchemy.ForeignKey("users.id")),
+  sqlalchemy.Column("embedding", Vector(constants.EMBED_DIM)),
+  sqlalchemy.Column("created_at", sqlalchemy.DateTime(timezone=True), server_default=sqlalchemy.func.now()),
+)
+
 
 async def seed() -> None:
   db = await get_db()

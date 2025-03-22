@@ -3,29 +3,47 @@
 import { HTTPError, serverGet } from "@/util/http";
 import { userContentItemValidator } from "@/validators";
 import { z } from "zod";
-import { redirect } from "next/navigation";
+import { redirect, usePathname } from "next/navigation";
 import FeedbackButtons from "./FeedbackButtons";
-import { feedGridClass } from "./util";
 import { useAuth } from "@clerk/nextjs";
 import { useQuery } from "@tanstack/react-query";
 import classNames from "classnames";
 import { useEffect, useRef, useState } from "react";
+import MoreLikeThisButton from "./MoreLikeThisButton";
 
-export default function Feed() {
+const feedGridClass = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6";
+
+export default function Feed({ flavourId }: { flavourId?: number }) {
   const { getToken } = useAuth();
 
   const [loadingPages, setLoadingPages] = useState(1);
+
+  const path = usePathname();
+  useEffect(() => {
+    // scroll to top
+    window.scrollTo(0, 0);
+  }, [path]);
 
   const {
     data: content,
     error,
     refetch,
   } = useQuery({
-    queryKey: ["feed"],
+    queryKey: ["feed", flavourId],
     queryFn: async (): Promise<z.infer<typeof userContentItemValidator>[]> => {
       setLoadingPages((prev) => prev + 1);
+      const queryParams = new URLSearchParams();
+      if (content) {
+        queryParams.append(
+          "recommendation_ids",
+          (content ?? []).map((x) => x.id).join(","),
+        );
+      }
+      if (flavourId) {
+        queryParams.append("flavour_id", flavourId.toString());
+      }
       const res = await serverGet(
-        `/feed?recommendation_ids=${(content ?? []).map((x) => x.id).join(",")}`,
+        `/feed?${queryParams.toString()}`,
         z.object({
           content: z.array(userContentItemValidator),
         }),
@@ -125,10 +143,15 @@ export default function Feed() {
                   <line x1="10" y1="14" x2="21" y2="3"></line>
                 </svg>
               </a>
-              <FeedbackButtons
-                contentId={contentItem.id}
-                rating={contentItem.rating}
-              />
+              <div className="flex items-center space-x-2">
+                {!flavourId && (
+                  <MoreLikeThisButton contentId={contentItem.id} />
+                )}
+                <FeedbackButtons
+                  contentId={contentItem.id}
+                  rating={contentItem.rating}
+                />
+              </div>
             </div>
           </div>
         </li>

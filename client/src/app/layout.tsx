@@ -30,7 +30,7 @@ export const metadata: Metadata = {
   description: "A deliciously curated RSS reader",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -104,7 +104,7 @@ export default function RootLayout({
               </div>
             </header>
             <Visualization />
-            <main className="max-w-6xl mx-auto">{children}</main>
+            {children}
           </body>
         </html>
       </Providers>

@@ -30,3 +30,12 @@ class UserContentItem(ContentItem):
 class Feedback(BaseModel):
   content_id: int
   rating: int
+
+
+class CreateFlavour(BaseModel):
+  content_id: int
+
+
+class Flavour(BaseModel):
+  id: int
+  nickname: str

@@ -82,3 +82,25 @@ export async function serverPost<T>(
   }
   return response.json();
 }
+
+export async function serverDelete<T>(
+  path: string,
+  getToken: () => Promise<string | null>,
+  validator?: ZodType<T> | null,
+) {
+  const response = await serverFetch(path, getToken, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    throw new HTTPError(response);
+  }
+  if (validator) {
+    const data = await response.json();
+    return validator.parse(data);
+  }
+  return response.json();
+}
