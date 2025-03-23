@@ -15,7 +15,7 @@ client = OpenAI(base_url=os.getenv("LLM_BASE_URL"), api_key=os.getenv("LLM_API_K
 #
 #
 async def get_recommendation_candidates(
-  user_id: int, user_embedding: list, recommendation_ids: list[int] | None = None
+  user_id: int, user_embedding: list, min_similarity: float, recommendation_ids: list[int] | None = None
 ):
   """
   Get a list of recommendation candidates for a user
@@ -23,7 +23,7 @@ async def get_recommendation_candidates(
 
   db = await database.get_db()
 
-  max_distance = util.cosine_to_l2_distance(constants.MIN_SEARCH_COSINE_SIMILARITY)
+  max_distance = util.cosine_to_l2_distance(min_similarity)
 
   # Find all content ids near the user embedding
   candidates = await db.fetch_all(
@@ -88,10 +88,12 @@ async def get_recommendations(user_id: int, flavour_id: int | None = None, recom
   if flavour_id:
     flavour = await db.fetch_one(database.user_flavours.select().where(database.user_flavours.c.id == flavour_id))
     reference_embedding = flavour.embedding
+    min_similarity = constants.MIN_FLAVOUR_COSINE_SIMILARITY
   else:
     reference_embedding = user.embedding
+    min_similarity = constants.MIN_SEARCH_COSINE_SIMILARITY
 
-  candidates = await get_recommendation_candidates(user_id, reference_embedding, recommendation_ids)
+  candidates = await get_recommendation_candidates(user_id, reference_embedding, min_similarity, recommendation_ids)
   ranked_candidates = rank_candidates(candidates)
   recommendation_ids = [candidate.id for candidate in ranked_candidates][: constants.NUM_RECOMMENDATIONS]
 
@@ -352,9 +354,19 @@ async def create_flavour(user_id: int, content_id: int):
   if not content_item:
     return []
 
+  # Create a flavour embedding based on the content item
+  flavour_embedding = torch.tensor(np.array(content_item.embedding))
+
+  # Save the flavour embedding to the database
+  flavour_id = await db.execute(
+    database.user_flavours.insert(), {"user_id": user_id, "embedding": flavour_embedding.tolist()}
+  )
+
+  recommendations = await get_recommendations(user_id, flavour_id)
+
   prompt = f"""
-  Describe a short topic title for a feed of articles based on the following headline: {content_item.title}.
-  The title should not be specific to the exact story but rather relate to the subject of the headline or the topic.
+  Describe a short topic title (max 5 words) for a feed of articles containing the following headlines:
+  {"\n".join([x.title for x in recommendations])}
   Return only the topic title, no additional text.
   """
 
@@ -366,12 +378,8 @@ async def create_flavour(user_id: int, content_id: int):
 
   nickname = response.choices[0].message.content
 
-  # Create a flavour embedding based on the content item
-  flavour_embedding = torch.tensor(np.array(content_item.embedding))
-
-  # Save the flavour embedding to the database
-  flavour_id = await db.execute(
-    database.user_flavours.insert(), {"user_id": user_id, "nickname": nickname, "embedding": flavour_embedding.tolist()}
+  await db.execute(
+    database.user_flavours.update().where(database.user_flavours.c.id == flavour_id), {"nickname": nickname}
   )
 
   return flavour_id
