@@ -7,6 +7,16 @@ services:
       - pg_data:/var/lib/postgresql/data
       - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
 
+  ollama:
+    image: ollama/ollama:latest
+    pull_policy: always
+    container_name: ollama
+    ports: ["11435:11434"] # will be accessible in http://localhost:11435
+    volumes:
+      - ./docker/ollama:/model_files # Mount the directory with the trained model
+    tty: true
+    entrypoint: ["/bin/sh", "/model_files/run.sh"] # Loading the finetuned Mistral with the GGUF file
+
 volumes:
   pg_data:
     driver: local

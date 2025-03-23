@@ -5,16 +5,20 @@ import feedparser
 import datetime
 import asyncpg
 import html
+import ollama
 
 from src import database
 
-model = sentence_transformers.SentenceTransformer("paraphrase-distilroberta-base-v1")
+# model = sentence_transformers.SentenceTransformer("paraphrase-distilroberta-base-v1")
 
 
 def get_content_embedding(feed_item: feedparser.FeedParserDict) -> torch.Tensor:
   text = feed_item.title + ": " + feed_item.summary
 
-  embedding = model.encode(text, normalize_embeddings=True)
+  # embedding = model.encode(text, normalize_embeddings=True)
+  res = ollama.embed(model="bge-m3", input=text)
+
+  embedding = torch.tensor(res.embeddings[0])
 
   return embedding
 

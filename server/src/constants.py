@@ -1,4 +1,4 @@
-EMBED_DIM = 768  # Must match the dimension of the model
+EMBED_DIM = 1024  # Must match the dimension of the model
 MAX_CONTENT_AGE = 7  # Days
 AGE_PENALTY_FACTOR = 6e-3  # Penalty for older content
 USER_ADJUST_FACTOR = 0.1  # Adjust the proportion of content to show based on rating

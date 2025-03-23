@@ -80,10 +80,10 @@ export default function Visualization() {
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden h-[calc(100vh-300px)]">
+            <div className="bg-white dark:bg-gray-900 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden">
               <iframe
                 src="/api/visualization"
-                className="w-full h-full"
+                className="w-full aspect-[3/2]"
                 title="Content embeddings visualization"
               />
             </div>
