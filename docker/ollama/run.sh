@@ -8,3 +8,5 @@ sleep 5
 echo "Ollama is ready, creating the model..."
 
 ollama pull bge-m3 # Pull embeddings model
+
+tail -f /dev/null # Keep the container running
