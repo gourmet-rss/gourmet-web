@@ -185,7 +185,7 @@ async def main():
       except Exception as e:
         print(f"Error processing source {source.url}: {e}")
         await complete_ingestion_job(job_id, success=False, error_message=str(e))
-    print(f"Completed ingestion job {job_id}. Processed {total_processed} items.")
+    print(f"Completed ingestion pipeline. Processed {total_processed} items.")
   except Exception as e:
     print(f"Error in ingestion pipeline: {e}")
   finally:

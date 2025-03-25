@@ -24,7 +24,7 @@ The rss feeder that only give you the best content you want.
 
 6. Run `uv run -m src.database` to seed the database with sample feeds
 
-7. Run `uv run -m src.ingest` to run the ingestion pipeline to ingest some content from the sample feeds
+7. Run `uv run --env-file=../.env -m src.ingest` to run the ingestion pipeline to ingest some content from the sample feeds
 
 ### Running the server
 
