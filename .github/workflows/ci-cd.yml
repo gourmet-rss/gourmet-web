@@ -90,3 +90,14 @@ jobs:
           LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
         run: |
           ansible-playbook -i inventory.ini playbook.yml
+
+      - name: Create/update Cloudflare DNS record
+        uses: Bluesboy/create-dns-record@v2.1
+        with:
+          type: "A"
+          name: "review.example.com"
+          content: ${{ vars.SERVER_HOST }}
+          ttl: auto
+          proxied: true
+          token: ${{ secrets.CLOUDFLARE_TOKEN }}
+          zone: ${{ vars.CLOUDFLARE_ZONE }}
