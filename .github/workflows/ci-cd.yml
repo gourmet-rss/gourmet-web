@@ -91,11 +91,38 @@ jobs:
         run: |
           ansible-playbook -i inventory.ini playbook.yml
 
-      - name: Create/update Cloudflare DNS record
-        uses: Bluesboy/create-dns-record@v2.1
+      - name: Delete existing root dns record
+        uses: infraway/delete-dns-record@v2.0
+        with:
+        with:
+          name: ${{ vars.CLOUDFLARE_ZONE }}
+          token: ${{ secrets.CLOUDFLARE_TOKEN }}
+          zone: ${{ vars.CLOUDFLARE_ZONE }}
+
+      - name: Delete existing www dns record
+        uses: infraway/delete-dns-record@v2.0
+        with:
+        with:
+          name: www
+          token: ${{ secrets.CLOUDFLARE_TOKEN }}
+          zone: ${{ vars.CLOUDFLARE_ZONE }}
+
+      - name: Create new root dns record
+        uses: infraway/create-dns-record@v2.0
         with:
           type: "A"
-          name: "review.example.com"
+          name: ${{ vars.CLOUDFLARE_ZONE }}
+          content: ${{ vars.SERVER_HOST }}
+          ttl: auto
+          proxied: true
+          token: ${{ secrets.CLOUDFLARE_TOKEN }}
+          zone: ${{ vars.CLOUDFLARE_ZONE }}
+
+      - name: Create new root dns record
+        uses: infraway/create-dns-record@v2.0
+        with:
+          type: "A"
+          name: www
           content: ${{ vars.SERVER_HOST }}
           ttl: auto
           proxied: true
