@@ -70,7 +70,7 @@ def rank_candidates(candidates: list):
   """
 
   for idx, candidate in enumerate(candidates):
-    candidate.rating = len(candidates) / ((idx + 1) * np.random.random())
+    candidate.rating = len(candidates) / (1 + (idx * np.random.random()))
 
   candidates.sort(key=lambda x: x.rating)
 
