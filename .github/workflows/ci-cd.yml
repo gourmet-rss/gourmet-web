@@ -94,14 +94,12 @@ jobs:
       - name: Delete existing root dns record
         uses: infraway/delete-dns-record@v2.0
         with:
-        with:
           name: ${{ vars.CLOUDFLARE_ZONE }}
           token: ${{ secrets.CLOUDFLARE_TOKEN }}
           zone: ${{ vars.CLOUDFLARE_ZONE }}
 
       - name: Delete existing www dns record
         uses: infraway/delete-dns-record@v2.0
-        with:
         with:
           name: www
           token: ${{ secrets.CLOUDFLARE_TOKEN }}
