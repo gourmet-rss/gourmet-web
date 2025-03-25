@@ -15,6 +15,7 @@ services:
       - LLM_MODEL=Qwen/Qwen2.5-32B-Instruct
       - LLM_API_KEY
       - DATABASE_URL=postgresql+asyncpg://postgres:$POSTGRES_PASSWORD@postgres:5432
+      - OLLAMA_HOST=http://ollama:11434
     depends_on:
       - postgres
       - ollama
@@ -26,6 +27,5 @@ services:
     environment:
       - CLERK_SECRET_KEY
       - SERVER_URL=http://server:8000
-      - OLLAMA_HOST=http://ollama:11434
     depends_on:
       - server
