@@ -38,4 +38,4 @@ class CreateFlavour(BaseModel):
 
 class Flavour(BaseModel):
   id: int
-  nickname: str
+  nickname: str | None

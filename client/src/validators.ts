@@ -33,5 +33,5 @@ export const feedbackValidator = z.object({
 
 export const flavourValidator = z.object({
   id: z.number(),
-  nickname: z.string(),
+  nickname: z.string().nullable(),
 });

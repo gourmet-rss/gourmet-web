@@ -106,7 +106,9 @@ const Sidebar = ({
                       className="px-4 py-2 flex items-center text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white cursor-default"
                       onClick={onToggle}
                     >
-                      <span className="truncate">{flavour.nickname}</span>
+                      <span className="truncate">
+                        {flavour.nickname ?? `Flavour ${flavour.id}`}
+                      </span>
                     </Link>
                   </li>
                 );
