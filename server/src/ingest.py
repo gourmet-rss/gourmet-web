@@ -1,6 +1,6 @@
+import os
 import torch
 import asyncio
-import sentence_transformers
 import feedparser
 import datetime
 import asyncpg
@@ -9,14 +9,14 @@ import ollama
 
 from src import database
 
-# model = sentence_transformers.SentenceTransformer("paraphrase-distilroberta-base-v1")
+print("host", os.getenv("OLLAMA_HOST", "http://localhost:11435"))
+ollama_client = ollama.Client(host=os.getenv("OLLAMA_HOST", "http://localhost:11435"))
 
 
 def get_content_embedding(feed_item: feedparser.FeedParserDict) -> torch.Tensor:
   text = feed_item.title + ": " + feed_item.summary
 
-  # embedding = model.encode(text, normalize_embeddings=True)
-  res = ollama.embed(model="bge-m3", input=text)
+  res = ollama_client.embed(model="bge-m3", input=text)
 
   embedding = torch.tensor(res.embeddings[0])
 
