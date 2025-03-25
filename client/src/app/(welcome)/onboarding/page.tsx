@@ -5,7 +5,6 @@ import { contentItemValidator } from "@/validators";
 import { z } from "zod";
 import classNames from "classnames";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { serverGet, serverPost } from "@/util/http";
 import { useAuth } from "@clerk/nextjs";
@@ -80,12 +79,11 @@ export default function ContentPicker() {
     }
   };
 
-  const router = useRouter();
-
   const { mutate, isPending: isSubmitting } = useMutation({
     mutationFn: handleOnSubmit,
     onSuccess: () => {
-      router.push("/");
+      // TODO: use next router (need to force revalidate feed)
+      window.location.href = "/";
     },
   });
 

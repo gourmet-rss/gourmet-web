@@ -80,12 +80,24 @@ ingestion_jobs = sqlalchemy.Table(
   "ingestion_jobs",
   metadata,
   sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True),
+  sqlalchemy.Column("source_id", sqlalchemy.Integer, sqlalchemy.ForeignKey("sources.id")),
   sqlalchemy.Column("start_time", sqlalchemy.DateTime(timezone=True)),
   sqlalchemy.Column("end_time", sqlalchemy.DateTime(timezone=True)),
   sqlalchemy.Column("status", sqlalchemy.String),  # 'running', 'completed', 'failed'
   sqlalchemy.Column("items_processed", sqlalchemy.Integer),
   sqlalchemy.Column("items_added", sqlalchemy.Integer),
   sqlalchemy.Column("error_message", sqlalchemy.String, nullable=True),
+)
+
+# flavours are separate sessions the user can access which have a different embedding
+user_flavours = sqlalchemy.Table(
+  "user_flavours",
+  metadata,
+  sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True),
+  sqlalchemy.Column("nickname", sqlalchemy.String, nullable=True),
+  sqlalchemy.Column("user_id", sqlalchemy.String, sqlalchemy.ForeignKey("users.id")),
+  sqlalchemy.Column("embedding", Vector(constants.EMBED_DIM)),
+  sqlalchemy.Column("created_at", sqlalchemy.DateTime(timezone=True), server_default=sqlalchemy.func.now()),
 )
 
 

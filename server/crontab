@@ -1,4 +1,7 @@
 # Run the feed ingestion pipeline every minute
-* * * * * /bin/bash -c 'cd /app && source /etc/cron.env && ./.venv/bin/python -m src.pipeline >> /var/log/cron.log 2>&1'
+* * * * * /bin/bash -c 'cd /app && source /etc/cron.env && ./.venv/bin/python -m src.ingest >> /var/log/cron.log 2>&1'
+
+# Run database pruning every day
+0 0 * * * /bin/bash -c 'cd /app && source /etc/cron.env && ./.venv/bin/python -m src.prune >> /var/log/cron.log 2>&1'
 
 # Empty line at the end is required for cron to work properly

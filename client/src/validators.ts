@@ -30,3 +30,8 @@ export const feedbackValidator = z.object({
   content_id: z.number(),
   rating: z.number(),
 });
+
+export const flavourValidator = z.object({
+  id: z.number(),
+  nickname: z.string(),
+});

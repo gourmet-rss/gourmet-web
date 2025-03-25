@@ -1,3 +1,4 @@
+import os
 import torch
 import uuid
 import numpy as np
@@ -5,12 +6,16 @@ from datetime import datetime
 from src import database, util, constants
 import sqlalchemy
 
+from openai import OpenAI
+
+client = OpenAI(base_url=os.getenv("LLM_BASE_URL"), api_key=os.getenv("LLM_API_KEY"))
+
 
 #
 #
 #
 async def get_recommendation_candidates(
-  user_id: int, user_embedding: list, recommendation_ids: list[int] | None = None
+  user_id: int, user_embedding: list, min_similarity: float, recommendation_ids: list[int] | None = None
 ):
   """
   Get a list of recommendation candidates for a user
@@ -18,7 +23,7 @@ async def get_recommendation_candidates(
 
   db = await database.get_db()
 
-  max_distance = util.cosine_to_l2_distance(constants.MIN_SEARCH_COSINE_SIMILARITY)
+  max_distance = util.cosine_to_l2_distance(min_similarity)
 
   # Find all content ids near the user embedding
   candidates = await db.fetch_all(
@@ -72,7 +77,7 @@ def rank_candidates(candidates: list):
   return candidates
 
 
-async def get_recommendations(user_id: int, recommendation_ids: list[int] | None = None):
+async def get_recommendations(user_id: int, flavour_id: int | None = None, recommendation_ids: list[int] | None = None):
   """
   Get recommendations for user
   """
@@ -80,7 +85,15 @@ async def get_recommendations(user_id: int, recommendation_ids: list[int] | None
   db = await database.get_db()
   user = await db.fetch_one(database.users.select().where(database.users.c.id == user_id))
 
-  candidates = await get_recommendation_candidates(user_id, user.embedding, recommendation_ids)
+  if flavour_id:
+    flavour = await db.fetch_one(database.user_flavours.select().where(database.user_flavours.c.id == flavour_id))
+    reference_embedding = flavour.embedding
+    min_similarity = constants.MIN_FLAVOUR_COSINE_SIMILARITY
+  else:
+    reference_embedding = user.embedding
+    min_similarity = constants.MIN_SEARCH_COSINE_SIMILARITY
+
+  candidates = await get_recommendation_candidates(user_id, reference_embedding, min_similarity, recommendation_ids)
   ranked_candidates = rank_candidates(candidates)
   recommendation_ids = [candidate.id for candidate in ranked_candidates][: constants.NUM_RECOMMENDATIONS]
 
@@ -306,3 +319,67 @@ async def onboard(user_id: int, liked_content_ids: list):
   await db.execute(
     database.users.update().where(database.users.c.id == user_id), {"embedding": user_embedding.tolist()}
   )
+
+
+async def get_flavour(flavour_id: int):
+  db = await database.get_db()
+  flavour = await db.fetch_one(database.user_flavours.select().where(database.user_flavours.c.id == flavour_id))
+  return flavour
+
+
+async def get_flavours():
+  db = await database.get_db()
+  flavours = await db.fetch_all(database.user_flavours.select())
+  return flavours
+
+
+async def delete_flavour(flavour_id: int):
+  db = await database.get_db()
+  await db.execute(database.user_flavours.delete().where(database.user_flavours.c.id == flavour_id))
+
+
+async def create_flavour(user_id: int, content_id: int):
+  """
+  Get content similar to a specific article
+
+  Args:
+      user_id (int): ID of the user
+      content_id (int): ID of the content to find similar items for
+      limit (int): Maximum number of similar items to return
+  """
+  db = await database.get_db()
+
+  # Get the content item's embedding
+  content_item = await db.fetch_one(database.content.select().where(database.content.c.id == content_id))
+  if not content_item:
+    return []
+
+  # Create a flavour embedding based on the content item
+  flavour_embedding = torch.tensor(np.array(content_item.embedding))
+
+  # Save the flavour embedding to the database
+  flavour_id = await db.execute(
+    database.user_flavours.insert(), {"user_id": user_id, "embedding": flavour_embedding.tolist()}
+  )
+
+  recommendations = await get_recommendations(user_id, flavour_id)
+
+  prompt = f"""
+  Describe a short topic title (max 5 words) for a feed of articles containing the following headlines:
+  {"\n".join([x.title for x in recommendations])}
+  Return only the topic title, no additional text.
+  """
+
+  response = client.chat.completions.create(
+    model=os.getenv("LLM_MODEL"),
+    temperature=0,
+    messages=[{"role": "user", "content": [{"type": "text", "text": prompt}]}],
+  )
+
+  nickname = response.choices[0].message.content
+
+  await db.execute(
+    database.user_flavours.update().where(database.user_flavours.c.id == flavour_id), {"nickname": nickname}
+  )
+
+  return flavour_id
