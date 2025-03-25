@@ -55,7 +55,9 @@ export default function Feed({ flavourId }: { flavourId?: number }) {
           content: z.array(userContentItemValidator),
         }),
         getToken,
-      );
+      ).catch((res) => {
+        throw new HTTPError(res);
+      });
 
       if (res.content.length === 0) {
         setLoadingPages(0);
