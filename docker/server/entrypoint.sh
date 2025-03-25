@@ -22,6 +22,7 @@ echo "Migrations completed successfully"
 echo "Starting cron service..."
 
 # Start cron service
+crontab /etc/cron.d/feed-ingestion-cron
 service cron start
 
 echo "Starting main application..."

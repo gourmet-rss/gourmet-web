@@ -9,7 +9,6 @@ import ollama
 
 from src import database
 
-print("host", os.getenv("OLLAMA_HOST", "http://localhost:11435"))
 ollama_client = ollama.Client(host=os.getenv("OLLAMA_HOST", "http://localhost:11435"))
 
 
