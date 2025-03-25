@@ -32,16 +32,10 @@ RUN apt-get update && apt-get install -y cron && rm -rf /var/lib/apt/lists/*
 # Copy the application from the builder
 COPY --from=builder --chown=app:app /app /app
 
-# Copy crontab file
-COPY crontab /etc/cron.d/feed-ingestion-cron
-RUN chmod 0644 /etc/cron.d/feed-ingestion-cron && \
-    crontab /etc/cron.d/feed-ingestion-cron && \
-    touch /var/log/cron.log
+# Create cron log file
+RUN touch /var/log/cron.log
 
 # Place executables in the environment at the front of the path
 ENV PATH="/app/.venv/bin:$PATH"
 
 WORKDIR /app
-
-# Start cron service and run the FastAPI application
-CMD ["/app/entrypoint.sh"]

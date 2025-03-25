@@ -6,6 +6,9 @@ services:
       - "9876:5432"
   server:
     image: ghcr.io/${GITHUB_USER}/gourmet-server
+    volumes:
+      - ./docker/server/entrypoint.sh:/app/entrypoint.sh
+      - ./docker/server/crontab:/etc/cron.d/feed-ingestion-cron
     environment:
       - CLERK_SECRET_KEY
       - LLM_BASE_URL=https://api.studio.nebius.com/v1/
@@ -15,6 +18,7 @@ services:
     depends_on:
       - postgres
       - ollama
+    command: "/app/entrypoint.sh"
   client:
     image: ghcr.io/${GITHUB_USER}/gourmet-client
     ports:
