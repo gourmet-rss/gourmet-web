@@ -94,27 +94,27 @@ jobs:
       - name: Delete existing root dns record
         uses: infraway/delete-dns-record@v2.0
         with:
-          name: ${{ vars.CLOUDFLARE_ZONE }}
+          name: ${{ vars.HOST }}
           token: ${{ secrets.CLOUDFLARE_TOKEN }}
-          zone: ${{ vars.CLOUDFLARE_ZONE }}
+          zone: ${{ vars.CLOUDFLARE_ZONE_ID }}
 
       - name: Delete existing www dns record
         uses: infraway/delete-dns-record@v2.0
         with:
           name: www
           token: ${{ secrets.CLOUDFLARE_TOKEN }}
-          zone: ${{ vars.CLOUDFLARE_ZONE }}
+          zone: ${{ vars.CLOUDFLARE_ZONE_ID }}
 
       - name: Create new root dns record
         uses: infraway/create-dns-record@v2.0
         with:
           type: "A"
-          name: ${{ vars.CLOUDFLARE_ZONE }}
+          name: ${{ vars.HOST }}
           content: ${{ vars.SERVER_HOST }}
           ttl: auto
           proxied: true
           token: ${{ secrets.CLOUDFLARE_TOKEN }}
-          zone: ${{ vars.CLOUDFLARE_ZONE }}
+          zone: ${{ vars.CLOUDFLARE_ZONE_ID }}
 
       - name: Create new root dns record
         uses: infraway/create-dns-record@v2.0
@@ -125,4 +125,4 @@ jobs:
           ttl: auto
           proxied: true
           token: ${{ secrets.CLOUDFLARE_TOKEN }}
-          zone: ${{ vars.CLOUDFLARE_ZONE }}
+          zone: ${{ vars.CLOUDFLARE_ZONE_ID }}
