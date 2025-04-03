@@ -22,7 +22,7 @@ export default function MoreLikeThisButton({
             loading: isCreatingFlavour,
           },
         )}
-        aria-label="More this flavour"
+        aria-label="More of this flavour"
       >
         <Sparkles size={18} />
       </button>

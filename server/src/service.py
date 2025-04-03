@@ -3,12 +3,29 @@ import torch
 import uuid
 import numpy as np
 from datetime import datetime
-from src import database, util, constants
+from src import database, util
 import sqlalchemy
 
 from openai import OpenAI
 
 client = OpenAI(base_url=os.getenv("LLM_BASE_URL"), api_key=os.getenv("LLM_API_KEY"))
+
+
+async def get_constant(name):
+  """Get a constant value from the database"""
+  db = await database.get_db()
+  constant = await db.fetch_one(database.constants_table.select().where(database.constants_table.c.name == name))
+  if not constant:
+    raise Exception(f"Constant {name} not found in database")
+
+  # Convert string value to appropriate type
+  value = constant.value
+  try:
+    # Try to convert to float first
+    return float(value)
+  except ValueError:
+    # If not a float, return as string
+    return value
 
 
 #
@@ -22,7 +39,7 @@ async def get_recommendation_candidates(
   """
 
   db = await database.get_db()
-
+  max_content_age = await get_constant("MAX_CONTENT_AGE")
   max_distance = util.cosine_to_l2_distance(min_similarity)
 
   # Find all content ids near the user embedding
@@ -31,7 +48,7 @@ async def get_recommendation_candidates(
         SELECT c.id, c.date, c.embedding <-> :user_embedding AS distance
         FROM content c
         LEFT JOIN user_content_ratings ucr ON c.id = ucr.content_id AND ucr.user_id = :user_id
-        WHERE c.date >= CURRENT_DATE - INTERVAL '{constants.MAX_CONTENT_AGE} days'
+        WHERE c.date >= CURRENT_DATE - INTERVAL '{max_content_age} days'
         AND c.id NOT IN (SELECT UNNEST(cast(:ignored_ids as int[])))
         AND (ucr.rating IS NULL OR ucr.rating >= 0)
         AND c.embedding <-> :user_embedding < :max_distance
@@ -51,12 +68,13 @@ async def get_recommendation_candidates(
     return []
 
   current_date = datetime.now().timestamp()
+  age_penalty_factor = await get_constant("AGE_PENALTY_FACTOR")
 
   # Adjust the distance by applying the age penalty
   for candidate in candidates:
     age_in_seconds = current_date - candidate.date.timestamp()
     age_in_hours = age_in_seconds / 3600
-    candidate.distance += age_in_hours * constants.AGE_PENALTY_FACTOR
+    candidate.distance += age_in_hours * age_penalty_factor
 
   # Sort the candidates by distance
   candidates.sort(key=lambda x: x.distance)
@@ -84,18 +102,21 @@ async def get_recommendations(user_id: int, flavour_id: int | None = None, recom
 
   db = await database.get_db()
   user = await db.fetch_one(database.users.select().where(database.users.c.id == user_id))
+  min_flavour_cosine_similarity = await get_constant("MIN_FLAVOUR_COSINE_SIMILARITY")
+  min_search_cosine_similarity = await get_constant("MIN_SEARCH_COSINE_SIMILARITY")
+  num_recommendations = await get_constant("NUM_RECOMMENDATIONS")
 
   if flavour_id:
     flavour = await db.fetch_one(database.user_flavours.select().where(database.user_flavours.c.id == flavour_id))
     reference_embedding = flavour.embedding
-    min_similarity = constants.MIN_FLAVOUR_COSINE_SIMILARITY
+    min_similarity = min_flavour_cosine_similarity
   else:
     reference_embedding = user.embedding
-    min_similarity = constants.MIN_SEARCH_COSINE_SIMILARITY
+    min_similarity = min_search_cosine_similarity
 
   candidates = await get_recommendation_candidates(user_id, reference_embedding, min_similarity, recommendation_ids)
   ranked_candidates = rank_candidates(candidates)
-  recommendation_ids = [candidate.id for candidate in ranked_candidates][: constants.NUM_RECOMMENDATIONS]
+  recommendation_ids = [candidate.id for candidate in ranked_candidates][: int(num_recommendations)]
 
   # Join content with user_content_ratings to get user ratings
   content = await db.fetch_all(
@@ -190,11 +211,10 @@ async def handle_feedback(user_id: int, content_id: int, rating: float):
   db = await database.get_db()
   user = await db.fetch_one(database.users.select().where(database.users.c.id == user_id))
   content = await db.fetch_one(database.content.select().where(database.content.c.id == content_id))
+  user_adjust_factor = await get_constant("USER_ADJUST_FACTOR")
 
   # Adjust the embedding based on the rating using exponential moving average (EMA)
-  updated_embedding = constants.USER_ADJUST_FACTOR * content.embedding * rating + (
-    (1 - constants.USER_ADJUST_FACTOR) * user.embedding
-  )
+  updated_embedding = user_adjust_factor * content.embedding * rating + ((1 - user_adjust_factor) * user.embedding)
 
   # Normalize the embedding to unit length
   norm = torch.linalg.vector_norm(torch.tensor(updated_embedding))
@@ -227,6 +247,8 @@ async def sign_up():
 #
 async def get_onboarding_content(existing_selected_content_ids: list, existing_unselected_content_ids: list):
   db = await database.get_db()
+  max_onboarding_cosine_similarity = await get_constant("MAX_ONBOARDING_COSINE_SIMILARITY")
+  sample_count = await get_constant("SAMPLE_COUNT")
 
   existing_selected_content = await db.fetch_all(
     database.content.select().where(database.content.c.id.in_(existing_selected_content_ids))
@@ -241,18 +263,18 @@ async def get_onboarding_content(existing_selected_content_ids: list, existing_u
       similarity = torch.cosine_similarity(
         torch.tensor(content.embedding), torch.tensor(selected_content_item.embedding), dim=0
       )
-      if similarity.item() > constants.MAX_ONBOARDING_COSINE_SIMILARITY:
+      if similarity.item() > max_onboarding_cosine_similarity:
         return False
     return True
 
   # Converts cosine similarity to L2 distance
-  min_l2_distance = util.cosine_to_l2_distance(constants.MAX_ONBOARDING_COSINE_SIMILARITY)
+  min_l2_distance = util.cosine_to_l2_distance(max_onboarding_cosine_similarity)
 
   print("Min L2 distance: ", min_l2_distance)
 
   existing_unselected_content = [x for x in existing_unselected_content if is_far_enough(x)]
 
-  sample_count = constants.SAMPLE_COUNT - len(existing_selected_content_ids) - len(existing_unselected_content)
+  sample_count = int(sample_count) - len(existing_selected_content_ids) - len(existing_unselected_content)
 
   if sample_count <= 0:
     return existing_selected_content + existing_unselected_content

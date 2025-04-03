@@ -101,6 +101,23 @@ user_flavours = sqlalchemy.Table(
 )
 
 
+constants_table = sqlalchemy.Table(
+  "constants",
+  metadata,
+  sqlalchemy.Column("id", sqlalchemy.Integer, primary_key=True),
+  sqlalchemy.Column("name", sqlalchemy.String, unique=True),
+  sqlalchemy.Column("value", sqlalchemy.String),
+  sqlalchemy.Column("description", sqlalchemy.String, nullable=True),
+  sqlalchemy.Column("created_at", sqlalchemy.DateTime(timezone=True), server_default=sqlalchemy.func.now()),
+  sqlalchemy.Column(
+    "updated_at",
+    sqlalchemy.DateTime(timezone=True),
+    server_default=sqlalchemy.func.now(),
+    onupdate=sqlalchemy.func.now(),
+  ),
+)
+
+
 async def seed() -> None:
   db = await get_db()
 
@@ -120,6 +137,23 @@ async def seed() -> None:
           await db.execute(query=insert_query, values={"url": url, "source_type": "rss"})
         except Exception as e:
           print(f"Error inserting {url}: {e}")
+
+  # Insert constants into the constants table
+  for name, details in constants.DB_CONSTANTS.items():
+    try:
+      insert_query = """
+              INSERT INTO constants (name, value, description)
+              VALUES (:name, :value, :description)
+              ON CONFLICT (name) DO UPDATE SET
+                  value = EXCLUDED.value,
+                  description = EXCLUDED.description,
+                  updated_at = NOW();
+              """
+      await db.execute(
+        query=insert_query, values={"name": name, "value": str(details["value"]), "description": details["description"]}
+      )
+    except Exception as e:
+      print(f"Error inserting constant {name}: {e}")
 
 
 if __name__ == "__main__":
