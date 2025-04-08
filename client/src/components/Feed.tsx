@@ -10,6 +10,7 @@ import { useQuery } from "@tanstack/react-query";
 import classNames from "classnames";
 import { useEffect, useRef, useState } from "react";
 import MoreLikeThisButton from "./MoreLikeThisButton";
+import { decode } from "html-entities";
 
 const feedGridClass = "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6";
 
@@ -147,24 +148,23 @@ export default function Feed({ flavourId }: { flavourId?: number }) {
             className="bg-white dark:bg-gray-900 rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 flex flex-col h-full border border-gray-200 dark:border-gray-800"
           >
             {contentItem.media?.length ? (
-              (contentItem.media[0].medium === "image" ||
-                contentItem.media[0].type?.startsWith("image/")) && (
+              contentItem.media[0].type === "image" && (
                 <div className="relative w-full h-48 overflow-hidden">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={contentItem.media[0].url}
-                    alt={
-                      contentItem.media[0].medium ??
-                      contentItem.media[0].type ??
-                      ""
-                    }
-                    width={contentItem.media[0].width ?? 100}
-                    height={contentItem.media[0].height ?? 100}
+                    alt={contentItem.media[0].type ?? ""}
+                    width={100}
+                    height={100}
                     className="h-full w-full object-cover transition-transform duration-500 hover:scale-105"
                   />
-                  {/* <div className="absolute top-0 left-0 bg-indigo-600 text-white px-3 py-1 text-xs uppercase tracking-wider font-bold">
-                    Featured
-                  </div> */}
+                  {contentItem.content_type &&
+                    contentItem.content_type !== "article" &&
+                    contentItem.content_type !== "unknown" && (
+                      <div className="absolute top-0 left-0 bg-indigo-600 text-white px-3 py-1 text-xs uppercase tracking-wider font-bold">
+                        {contentItem.content_type}
+                      </div>
+                    )}
                 </div>
               )
             ) : (
@@ -186,7 +186,9 @@ export default function Feed({ flavourId }: { flavourId?: number }) {
 
               <div
                 className="text-gray-700 dark:text-gray-300 mb-4 line-clamp-3 text-sm leading-relaxed article-content"
-                dangerouslySetInnerHTML={{ __html: contentItem.description }}
+                dangerouslySetInnerHTML={{
+                  __html: decode(contentItem.description),
+                }}
               />
 
               <div className="mt-auto pt-4 border-t border-gray-100 dark:border-gray-800 flex justify-between items-center">

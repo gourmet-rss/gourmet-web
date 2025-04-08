@@ -4,14 +4,19 @@ import asyncio
 import feedparser
 import datetime
 import asyncpg
-import html
 import ollama
+import bs4
+import bleach
+from typing import Literal
 
 from src import database
 
 ollama_client = ollama.Client(host=os.getenv("OLLAMA_HOST", "http://localhost:11435"))
 
 
+#
+#
+#
 def get_content_embedding(feed_item: feedparser.FeedParserDict) -> torch.Tensor:
   text = feed_item.title + ": " + feed_item.summary
 
@@ -22,6 +27,86 @@ def get_content_embedding(feed_item: feedparser.FeedParserDict) -> torch.Tensor:
   return embedding
 
 
+def clean_description(description: str) -> str:
+  # Allow only safe HTML tags (e.g., <p>, <a>, <img>)
+  allowed_tags = ["p", "a", "br", "ul", "li", "strong", "em"]
+  cleaned = bleach.clean(description, tags=allowed_tags, strip=True)
+
+  # Extract text-only alternative
+  soup = bs4.BeautifulSoup(description, "html.parser")
+  text_only = soup.get_text(separator=" ", strip=True)
+
+  return cleaned, text_only
+
+
+def extract_media(feed_item: feedparser.FeedParserDict) -> list[dict[str, str]]:
+  media = []
+
+  # 1. Check RSS enclosures (podcasts/images)
+  for enclosure in getattr(feed_item, "enclosures", []):
+    media.append(
+      {
+        "type": enclosure.type.split("/")[0],  # 'image', 'audio', etc.
+        "url": enclosure.href,
+        "source": "enclosure",
+      }
+    )
+
+  # 2. Check Media RSS
+  if hasattr(feed_item, "media_content"):
+    for mc in feed_item.media_content:
+      media.append({"type": mc.get("medium", mc.type.split("/")[0]), "url": mc["url"], "source": "media_rss"})
+
+  # 3. Scrape HTML description for embedded media
+  soup = bs4.BeautifulSoup(feed_item.description, "html.parser")
+  for img in soup.find_all("img"):
+    media.append({"type": "image", "url": img.get("src"), "source": "html_embed"})
+
+  return media
+
+
+ContentType = Literal["audio", "video", "article", "unknown"]
+
+
+def detect_content_type(feed_item: feedparser.FeedParserDict) -> ContentType:
+  # Initialize type counters
+  type_counts = {"audio": 0, "video": 0, "article": 0}
+
+  # Priority 1: Check RSS/Media-RSS explicit tags
+  if hasattr(feed_item, "media_medium"):
+    if feed_item.media_medium == "audio":
+      type_counts["audio"] += 2
+    elif feed_item.media_medium == "video":
+      type_counts["video"] += 2
+
+  # Priority 2: Analyze enclosures
+  for enc in getattr(feed_item, "enclosures", []):
+    if enc.type.startswith("audio/"):
+      type_counts["audio"] += 1
+      break  # Only count once per type
+    elif enc.type.startswith("video/"):
+      type_counts["video"] += 1
+      break
+
+  # Priority 3: Heuristics (title/description/category)
+  text = (feed_item.title + " " + feed_item.description).lower()
+  if "podcast" in text or "episode" in text:
+    type_counts["audio"] += 1
+  elif "video" in text or "watch" in text:
+    type_counts["video"] += 1
+
+  # Determine final type based on majority
+  max_count = max(type_counts.values())
+  if max_count >= 2:
+    return max(type_counts, key=type_counts.get)
+
+  # Default to article if no clear majority
+  return "article" if not getattr(feed_item, "enclosures", []) else "unknown"
+
+
+#
+#
+#
 async def process_feed_item(source_id: int, feed_item: feedparser.FeedParserDict, job_id: int):
   embedding = get_content_embedding(feed_item)
   published_date = None
@@ -33,36 +118,9 @@ async def process_feed_item(source_id: int, feed_item: feedparser.FeedParserDict
     print(f"WARNING: No date found for {feed_item.link}")
     published_date = datetime.datetime.now()
 
-  # Determine content type based on available information
-  content_type = "article"  # Default type
-
-  # Check for podcast/audio content
-  if "enclosures" in feed_item:
-    for enclosure in feed_item.enclosures:
-      if enclosure.get("type", "").startswith("audio/"):
-        content_type = "audio"
-        break
-
-  # Check for video content
-  if content_type == "article" and "media_content" in feed_item:
-    for media in feed_item.media_content:
-      if media.get("type", "").startswith("video/"):
-        content_type = "video"
-        break
-
-  # Additional check in links for video/audio
-  if content_type == "article" and "links" in feed_item:
-    for link in feed_item.links:
-      link_type = link.get("type", "")
-      if link_type.startswith("video/"):
-        content_type = "video"
-        break
-      elif link_type.startswith("audio/"):
-        content_type = "audio"
-        break
-
-  # Sanitize text content
-  summary = html.escape(feed_item.summary) if hasattr(feed_item, "summary") else ""
+  media = extract_media(feed_item)
+  content_type = detect_content_type(feed_item)
+  summary_html, _ = clean_description(feed_item.summary) if hasattr(feed_item, "summary") else ("", "")
 
   db = await database.get_db()
   try:
@@ -71,11 +129,11 @@ async def process_feed_item(source_id: int, feed_item: feedparser.FeedParserDict
       {
         "title": feed_item.title,
         "url": feed_item.link,
-        "description": summary,
+        "description": summary_html,
         "source_id": source_id,
         "date": published_date,
         "embedding": embedding.tolist(),
-        "media": feed_item.get("media_content", []),
+        "media": media,
         "content_type": content_type,
       },
     )
@@ -87,10 +145,13 @@ async def process_feed_item(source_id: int, feed_item: feedparser.FeedParserDict
     )
     return True
   except asyncpg.exceptions.UniqueViolationError:
-    print(f"WARNING: Already processed {link}, skipping")
+    print(f"WARNING: Already processed {feed_item.title} source_id: {source_id}, skipping")
     return False
 
 
+#
+#
+#
 async def get_last_ingestion_date(source_id: int):
   """Get the start time of the last successful ingestion job for a specific source"""
   db = await database.get_db()
@@ -105,6 +166,9 @@ async def get_last_ingestion_date(source_id: int):
   return result["start_time"] if result else None
 
 
+#
+#
+#
 async def create_ingestion_job(source_id: int):
   """Create a new ingestion job and return its ID"""
   db = await database.get_db()
@@ -136,6 +200,9 @@ async def complete_ingestion_job(job_id: int, success: bool = True, error_messag
   )
 
 
+#
+#
+#
 async def feed_ingestion(feed_id: int, feed_url: str, job_id: int, last_ingestion_date: datetime.datetime = None):
   try:
     print(f"Ingesting feed {feed_url}")
@@ -165,6 +232,9 @@ async def feed_ingestion(feed_id: int, feed_url: str, job_id: int, last_ingestio
     raise
 
 
+#
+#
+#
 async def main():
   try:
     print("Starting ingestion pipeline")

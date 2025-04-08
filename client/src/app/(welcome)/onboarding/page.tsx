@@ -10,6 +10,7 @@ import { serverGet, serverPost } from "@/util/http";
 import { useAuth } from "@clerk/nextjs";
 import { ArrowLeft, Check } from "lucide-react";
 import { motion } from "framer-motion";
+import { decode } from "html-entities";
 
 const MIN_ITEMS = 3;
 
@@ -161,9 +162,12 @@ export default function ContentPicker() {
                         <h3 className="font-medium text-gray-900 dark:text-white mb-2 line-clamp-2">
                           {contentItem.title}
                         </h3>
-                        <p className="text-sm text-gray-500 dark:text-gray-400 line-clamp-3">
-                          {contentItem.description}
-                        </p>
+                        <div
+                          className="text-sm text-gray-500 dark:text-gray-400 line-clamp-3"
+                          dangerouslySetInnerHTML={{
+                            __html: decode(contentItem.description),
+                          }}
+                        ></div>
                       </div>
                       {isSelected && (
                         <div className="flex justify-end mt-3">

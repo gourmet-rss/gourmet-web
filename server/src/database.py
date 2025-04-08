@@ -135,6 +135,7 @@ async def seed() -> None:
                   ON CONFLICT (url) DO NOTHING;
                   """
           await db.execute(query=insert_query, values={"url": url, "source_type": "rss"})
+          print(f"Inserted {url}")
         except Exception as e:
           print(f"Error inserting {url}: {e}")
 
@@ -152,6 +153,7 @@ async def seed() -> None:
       await db.execute(
         query=insert_query, values={"name": name, "value": str(details["value"]), "description": details["description"]}
       )
+      print(f"Inserted {name}")
     except Exception as e:
       print(f"Error inserting constant {name}: {e}")
 

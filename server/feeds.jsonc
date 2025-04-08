@@ -4,7 +4,8 @@
     "https://feeds.bbci.co.uk/news/rss.xml", // BBC News
     "https://rss.cnn.com/rss/edition.rss", // CNN
     "https://www.foxnews.com/rss.xml", // Fox News
-    "https://www.theguardian.com/uk/rss" // The Guardian (UK)
+    "https://www.theguardian.com/uk/rss", // The Guardian (UK)
+    "https://rss.art19.com/the-daily-briefing" // TLDR News - The Daily Briefing
   ],
   "Technology": [
     "https://techcrunch.com/feed/", // TechCrunch
