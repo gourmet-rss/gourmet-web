@@ -2,7 +2,7 @@ from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA
 import plotly.graph_objects as go
 import asyncio
-from src import database
+from src import database, service
 import numpy as np
 import torch
 from datetime import datetime, timedelta
@@ -10,9 +10,7 @@ from datetime import datetime, timedelta
 
 async def visualize_user_embedding_history(user_embeddings: list):
   db = await database.get_db()
-  max_content_age = await db.fetch_one(
-    database.constants_table.select().where(database.constants_table.c.name == "MAX_CONTENT_AGE")
-  )
+  max_content_age = await service.get_constant("MAX_CONTENT_AGE")
 
   all_content = await db.fetch_all(
     database.content.select().where(database.content.c.date >= datetime.now() - timedelta(days=max_content_age))

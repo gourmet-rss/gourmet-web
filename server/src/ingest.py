@@ -33,8 +33,7 @@ def clean_description(description: str) -> str:
   cleaned = bleach.clean(description, tags=allowed_tags, strip=True)
 
   # Extract text-only alternative
-  soup = bs4.BeautifulSoup(description, "html.parser")
-  text_only = soup.get_text(separator=" ", strip=True)
+  text_only = bleach.clean(description, strip=True)
 
   return cleaned, text_only
 
