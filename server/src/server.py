@@ -78,13 +78,25 @@ async def get_feed(request: Request, flavour_id: int | None = None, recommendati
   for content_item in content:
     content_item_dict = dict(content_item)
 
-    if "media" in content_item_dict:
+    # Handle media field
+    media = content_item_dict.get("media", [])
+    if isinstance(media, str):
       try:
-        content_item_dict["media"] = json.loads(content_item_dict["media"])
+        media = json.loads(media)
       except json.JSONDecodeError:
-        content_item_dict["media"] = []
+        media = []
 
-    validated_content.append(validators.UserContentItem(**content_item_dict))
+    # Ensure media is a list of dictionaries
+    if not isinstance(media, list):
+      media = []
+
+    content_item_dict["media"] = media
+
+    try:
+      validated_content.append(validators.UserContentItem(**content_item_dict))
+    except Exception as e:
+      print(f"Error validating content item: {e}")
+      continue
 
   return {"content": validated_content}
 
